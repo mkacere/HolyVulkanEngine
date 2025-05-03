@@ -5,7 +5,7 @@ file(GLOB_RECURSE ENGINE_SOURCES
 )
 
 # Create a static library for the engine
-add_library(HVKEngine STATIC ${ENGINE_SOURCES} "hvk_config.h")
+add_library(HVKEngine STATIC ${ENGINE_SOURCES})
 
 # Add external includes
 target_include_directories(HVKEngine PUBLIC

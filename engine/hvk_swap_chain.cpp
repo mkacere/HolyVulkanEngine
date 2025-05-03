@@ -252,7 +252,7 @@ namespace hvk {
 
 			// 2) transition into COLOR_ATTACHMENT_OPTIMAL
 			VkCommandBuffer cmd = device_.beginSingleTimeCommands();
-			utils::transitionImageLayout(
+			transitionImageLayout(
 				cmd,
 				colorImages_[i],
 				colorFormat,
@@ -315,7 +315,7 @@ namespace hvk {
 			);
 
 			VkCommandBuffer cmd = device_.beginSingleTimeCommands();
-			utils::transitionImageLayout(
+			transitionImageLayout(
 				cmd,
 				depthImages_[i],
 				depthFormat,

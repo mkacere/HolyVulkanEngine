@@ -20,20 +20,4 @@ file(GLOB_RECURSE SHADER_SOURCE_FILES
     "${CMAKE_SOURCE_DIR}/shaders/*.frag"
 )
 
-foreach(GLSL ${SHADER_SOURCE_FILES})
-    get_filename_component(FILE_NAME ${GLSL} NAME)
-    get_filename_component(FILE_DIR ${GLSL} DIRECTORY)
-    set(SPV "${FILE_DIR}/${FILE_NAME}.spv")
-
-    add_custom_command(
-        OUTPUT ${SPV}
-        COMMAND glslc ${GLSL} -o ${SPV}
-        DEPENDS ${GLSL}
-        COMMENT "Compiling shader: ${GLSL}"
-        VERBATIM
-    )
-
-    list(APPEND SPIRV_BINARY_FILES ${SPV})
-endforeach()
-
-add_custom_target(compile_shaders ALL DEPENDS ${SPIRV_BINARY_FILES})
+# 2) Prepare the output list
