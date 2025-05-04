@@ -5,6 +5,9 @@
 #include "hvk_device.h"
 #include "hvk_swap_chain.h"
 
+#include "hvk_frame_info.hpp"
+#include "hvk_irender_system.hpp"
+
 #include <cassert>
 #include <memory>
 #include <vector>
@@ -20,6 +23,9 @@ namespace hvk {
 
 		HvkRenderer(const HvkRenderer&) = delete;
 		HvkRenderer& operator=(const HvkRenderer&) = delete;
+
+		void drawFrame(float frameTime, HvkCamera& camera, VkDescriptorSet globalDescriptorSet, HvkGameObject::Map& gameObjects);
+		void addRenderSystem(IRenderSystem* system);
 
 		VkRenderPass getSwapChainRenderPass() const { return hvkSwapChain_->getRenderPass(); }
 		float getAspectRatio() const { return hvkSwapChain_->extentAspectRatio(); }
@@ -49,6 +55,8 @@ namespace hvk {
 		HvkDevice& hvkDevice_;
 		std::unique_ptr<HvkSwapChain> hvkSwapChain_;
 		std::vector<VkCommandBuffer> commandBuffers_;
+
+		std::vector<IRenderSystem*> renderSystems_;
 
 		uint32_t currentImageIndex_;
 		int currentFrameIndex_ = 0;

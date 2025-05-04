@@ -1,44 +1,34 @@
 ﻿#version 450
 
-layout(location=0) in vec3 inPosition;
-layout(location=1) in vec3 inColor;
-layout(location=2) in vec3 inNormal;
+layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec3 inColor;     // if you still want per‐vertex color
+layout(location = 2) in vec3 inNormal;
+layout(location = 3) in vec2 inUV;
 
-layout(set = 0, binding = 0) uniform MVP {
+layout(push_constant) uniform PushConstants {
     mat4 model;
+    mat4 normal;
+} pc;
+
+layout(set = 0, binding = 0) uniform GlobalUbo {
+    mat4 projection;
     mat4 view;
-    mat4 proj;
+    mat4 inverseView;
+    vec4 ambientLightColor;
+    int   numLights;
 } ubo;
 
-layout(location = 0) out vec3 fragPosWorld;
-layout(location = 1) out vec3 fragNormalWorld;
-layout(location = 2) out vec3 fragColor;
-
-// how far down (in world units) to move the mesh
-const float OFFSET_Y = 0.75;
-const float OFFSET_Z = 0.5;
+layout(location = 0) out vec3 fragNormal;
+layout(location = 1) out vec3 fragColor;
+layout(location = 2) out vec2 fragUV;
 
 void main() {
-    // 1) Reflect across Z axis: invert X and Y, leave Z
-    vec3 posReflected   = vec3(inPosition.x, -inPosition.y, -inPosition.z);
-    vec3 normReflected  = vec3(inNormal.x,   -inNormal.y,   inNormal.z);
-
-    // 2) Transform into world space
-    vec4 worldPos = ubo.model * vec4(posReflected, 1.0);
-
-    // 3) Translate down along Y
-    worldPos.y += OFFSET_Y;
-    worldPos.z += OFFSET_Z;
-
-    // 4) Compute correct world‐space normal
-    mat3 normalMat = transpose(inverse(mat3(ubo.model)));
-    vec3 n = normalize(normalMat * normReflected);
-
-    // 5) Feed varyings
-    fragPosWorld    = worldPos.xyz;
-    fragNormalWorld = n;
-    fragColor       = inColor;
-
-    // 6) Final MVP
-    gl_Position = ubo.proj * ubo.view * worldPos;
+    // Transform normal into world (or view) space:
+    fragNormal = (pc.normal * vec4(inNormal, 0.0)).xyz;
+    // pass along vertex color if you like:
+    fragColor = inColor;
+    // pass UV for sampling
+    fragUV = inUV;
+    // standard MVP:
+    gl_Position = ubo.projection * ubo.view * pc.model * vec4(inPosition, 1.0);
 }

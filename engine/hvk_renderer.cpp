@@ -18,6 +18,35 @@ namespace hvk {
 		freeCommandBuffers();
 	}
 
+	void HvkRenderer::drawFrame(float frameTime, HvkCamera& camera, VkDescriptorSet globalDescriptorSet, HvkGameObject::Map& gameObjects) {
+		VkCommandBuffer cmd = beginFrame();
+		beginSwapChainRenderPass(cmd);
+
+		FrameInfo frameInfo{
+			currentFrameIndex_,
+			frameTime,
+			cmd,
+			hvkSwapChain_->getRenderPass(),
+			hvkSwapChain_->getFrameBuffer(currentFrameIndex_),
+			hvkSwapChain_->getSwapChainExtent(),
+			camera,
+			globalDescriptorSet,
+			gameObjects
+		};
+
+		for (auto* sys : renderSystems_) {
+			sys->render(frameInfo);
+		}
+
+		endSwapChainRenderPass(cmd);
+		endFrame();
+	}
+
+	void HvkRenderer::addRenderSystem(IRenderSystem* system) 
+	{
+		renderSystems_.push_back(system);
+	}
+
 	void HvkRenderer::recreateSwapChain()
 	{
 		auto extent = hvkWindow_.getExtent();

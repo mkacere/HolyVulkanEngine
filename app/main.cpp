@@ -1,171 +1,177 @@
-﻿// main.cpp
-
-#include "hvk_window.h"
+﻿#include "hvk_window.h"
 #include "hvk_device.h"
+#include "hvk_swap_chain.h"
 #include "hvk_renderer.h"
 #include "hvk_pipeline.h"
-#include "hvk_descriptors.h"
-#include "hvk_buffer.h"
 #include "hvk_model.h"
-#include "hvk_game_object.h"
-#include "hvk_camera.h"
-#include "hvk_frame_info.hpp"
+#include "hvk_buffer.h"
+#include "hvk_descriptors.h"
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <memory>
-#include <vector>
-#include <cassert>
-#include <stdexcept>
 
-static const uint32_t WIDTH = 1280;
-static const uint32_t HEIGHT = 720;
-// You have two frames in flight in your swap chain:
-static const int MAX_FRAMES_IN_FLIGHT = 2;
+#include <GLFW/glfw3.h>
+#include <iostream>
+#include <stdexcept>
+#include <memory>
+#include <string>
+
+// Must match your GLSL GlobalUbo in model.vert/frag
+struct GlobalUbo {
+    glm::mat4 projection;
+    glm::mat4 view;
+    glm::mat4 inverseView;
+    glm::vec4 ambientLightColor;
+    int       numLights;
+};
 
 int main() {
-    // 1) Create the window & Vulkan device
-    hvk::HvkWindow window{ WIDTH, HEIGHT, "Model Viewer" };
-    hvk::HvkDevice device{ window };
+    try {
+        // 1) window + device
+        hvk::HvkWindow window{ 800, 600, "Holy Vulkan" };
+        hvk::HvkDevice device{ window };
 
-    // 2) Create the renderer (owns swap chain + command buffers)
-    hvk::HvkRenderer renderer{ window, device };
+        // 2) prepare global UBO data
+        GlobalUbo ubo{};
+        float aspect = window.getExtent().width / float(window.getExtent().height);
+        ubo.projection = glm::perspective(glm::radians(60.f), aspect, 0.1f, 100.f);
+        ubo.projection[1][1] *= -1; // GLM to Vulkan Y flip
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    // 3) Build a descriptor‐set layout for a single UBO at set=0,binding=0
-    auto globalSetLayout = hvk::HvkDescriptorSetLayout::Builder{ device }
-        .addBinding(
-            /*binding=*/0,
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
-        )
-        .build();
-
-    // 4) Build a descriptor‐pool that can allocate MAX_FRAMES_IN_FLIGHT UBO sets
-    auto descriptorPool = hvk::HvkDescriptorPool::Builder{ device }
-        .setMaxSets(MAX_FRAMES_IN_FLIGHT)
-        .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
-        .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
-        .build();
-
-    // 5) Create one host‐visible buffer for your GlobalUbo
-    auto globalUboBuffer = std::make_unique<hvk::HvkBuffer>(
-        device,
-        sizeof(hvk::GlobalUbo),
-        1,
-        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-    );
-
-    // 6) Allocate & write one VkDescriptorSet per frame
-    std::vector<VkDescriptorSet> globalDescriptorSets(MAX_FRAMES_IN_FLIGHT);
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        // grab the buffer‐info for our UBO
-        VkDescriptorBufferInfo bufferInfo = globalUboBuffer->descriptorInfo();
-
-        // write into a fresh set
-        hvk::HvkDescriptorWriter{ *globalSetLayout, *descriptorPool }
-            .writeBuffer(0, &bufferInfo)
-            .build(globalDescriptorSets[i]);
-    }
-
-    // 7) Create a VkPipelineLayout tying in our descriptor‐set layout:
-    VkPipelineLayout pipelineLayout;
-    {
-        VkPipelineLayoutCreateInfo layoutInfo{};
-        layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        layoutInfo.setLayoutCount = 1;
-        VkDescriptorSetLayout rawLayout = globalSetLayout->getDescriptorSetLayout();
-        layoutInfo.pSetLayouts = &rawLayout;
-        layoutInfo.pushConstantRangeCount = 0;
-        layoutInfo.pPushConstantRanges = nullptr;
-
-        if (vkCreatePipelineLayout(device.device(), &layoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create pipeline layout");
-        }
-    }
-
-    // 8) Configure & build our graphics pipeline
-    hvk::PipelineConfigInfo pipelineConfig{};
-    hvk::HvkPipeline::defaultPipelineConfigInfo(pipelineConfig);
-
-    pipelineConfig.multisampleInfo.rasterizationSamples = device.getMsaaSamples();
-
-    // feed in our vertex‐layout from HvkModel::Vertex
-    pipelineConfig.bindingDescriptions = hvk::HvkModel::Vertex::getBindingDescriptions();
-    pipelineConfig.attributeDescriptions = hvk::HvkModel::Vertex::getAttributeDescriptions();
-
-    // use the renderer’s render pass & our new pipelineLayout
-    pipelineConfig.renderPass = renderer.getSwapChainRenderPass();
-    pipelineConfig.pipelineLayout = pipelineLayout;
-    pipelineConfig.subpass = 0;
-
-    // finally build it (loads SPIR-V, creates shader modules, etc.)
-    auto pipeline = std::make_unique<hvk::HvkPipeline>(
-        device,
-        "../../../shaders/model.vert.spv",
-        "../../../shaders/model.frag.spv",
-        pipelineConfig
-    );
-
-    // 9) Load your model into a single game‐object
-    hvk::HvkGameObject::Map gameObjects;
-    {
-        auto modelPtr = hvk::HvkModel::createModelFromFile(
-            device,
-            "../../../assets/models/Crystar_Kokoro_Fudoji.glb"
-        );
-        auto obj = hvk::HvkGameObject::createGameObject();
-        obj.model = std::move(modelPtr);
-        obj.transform.translation = { 0.f, 0.f, 0.f };
-        obj.transform.scale = { 1.f, 1.f, 1.f };
-        gameObjects.emplace(obj.getId(), std::move(obj));
-    }
-
-    // 10) Create a camera
-    hvk::HvkCamera camera{};
-
-    // 11) Main loop
-    while (!window.shouldClose()) {
-        glfwPollEvents();
-
-        // a) Begin frame & get current command buffer + frame index
-        VkCommandBuffer cmd = renderer.beginFrame();
-        int frameIndex = renderer.getFrameIndex();
-
-        // b) Update our global UBO (projection + view matrices)
-        hvk::GlobalUbo ubo{};
-        ubo.projection = camera.getProjection();
-        ubo.view = camera.getView();
         ubo.inverseView = glm::inverse(ubo.view);
-        ubo.ambientLightColor = glm::vec4(1.f, 1.f, 1.f, 0.02f);
-        ubo.numLights = 0;  // no point lights yet
+        ubo.ambientLightColor = { 1,1,1,1 };
+        ubo.numLights = 0;
 
-        globalUboBuffer->map();
-        globalUboBuffer->writeToBuffer(&ubo);
-        globalUboBuffer->unmap();
+        // 3) upload UBO to GPU
+        hvk::HvkBuffer uboBuffer{
+            device,
+            sizeof(GlobalUbo), 1,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        };
+        uboBuffer.map();
+        uboBuffer.writeToBuffer(&ubo);
 
-        // c) Record draw commands
-        renderer.beginSwapChainRenderPass(cmd);
+        // 4) descriptor set layout for UBO (b0) + sampler (b1)
+        auto layoutUniq = hvk::HvkDescriptorSetLayout::Builder(device)
+            .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+            .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                VK_SHADER_STAGE_FRAGMENT_BIT)
+            .build();
+        auto setLayout = std::shared_ptr<hvk::HvkDescriptorSetLayout>(std::move(layoutUniq));
 
-        pipeline->bind(cmd);
-        vkCmdBindDescriptorSets(
-            cmd,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineLayout,
-            0, 1,
-            &globalDescriptorSets[frameIndex],
-            0, nullptr
-        );
+        // 5) descriptor pool (one UBO + one sampler)
+        auto poolUniq = hvk::HvkDescriptorPool::Builder(device)
+            .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
+            .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
+            .setMaxSets(1)
+            .build();
+        auto pool = std::shared_ptr<hvk::HvkDescriptorPool>(std::move(poolUniq));
 
-        for (auto& [id, obj] : gameObjects) {
-            obj.model->bind(cmd);
-            obj.model->draw(cmd);
+        // 6) load model (including its texture)
+        std::string modelPath = "../../../../assets/models/Crystar_Kokoro_Fudoji.glb";
+        auto model = hvk::HvkModel::createModelFromFile(device, modelPath);
+
+        // 7) give the model our layout + pool so it can write its texture descriptor
+        model->setDescriptorLayout(setLayout);
+        model->setDescriptorPool(pool);
+
+        // 8) allocate & write **one** descriptor set for both UBO & texture
+        VkDescriptorSet globalSet;
+        {
+            auto writer = hvk::HvkDescriptorWriter(*setLayout, *pool);
+            // binding 0 = UBO
+            auto uboInfo = uboBuffer.descriptorInfo();
+            writer.writeBuffer(0, &uboInfo);
+            // binding 1 = texture, if present
+            if (model->hasTexture()) {
+                auto imageInfo = model->getImageInfo();
+                writer.writeImage(1, &imageInfo);
+            }
+            if (!writer.build(globalSet)) {
+                throw std::runtime_error("Failed to build global descriptor set");
+            }
         }
 
-        renderer.endSwapChainRenderPass(cmd);
-        renderer.endFrame();
+        // 9) renderer + pipeline layout
+        hvk::HvkRenderer renderer{ window, device };
+        VkDescriptorSetLayout dsl = setLayout->getDescriptorSetLayout();
+        VkPushConstantRange pushRange{};
+        pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        pushRange.offset = 0;
+        pushRange.size = sizeof(glm::mat4) * 2;
+
+        VkPipelineLayoutCreateInfo pli{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+        pli.setLayoutCount = 1;
+        pli.pSetLayouts = &dsl;
+        pli.pushConstantRangeCount = 1;
+        pli.pPushConstantRanges = &pushRange;
+
+        VkPipelineLayout pipelineLayout;
+        if (vkCreatePipelineLayout(device.device(), &pli, nullptr, &pipelineLayout)
+            != VK_SUCCESS) {
+            throw std::runtime_error("failed to create pipeline layout");
+        }
+
+        // 10) build graphics pipeline
+        hvk::PipelineConfigInfo config{};
+        hvk::HvkPipeline::defaultPipelineConfigInfo(config);
+        config.multisampleInfo.rasterizationSamples = device.getMsaaSamples();
+        config.renderPass = renderer.getSwapChainRenderPass();
+        config.pipelineLayout = pipelineLayout;
+
+        auto pipeline = std::make_unique<hvk::HvkPipeline>(
+            device,
+            "../../../shaders/model.vert.spv",
+            "../../../shaders/model.frag.spv",
+            config
+        );
+
+        // 11) main loop
+        while (!window.shouldClose()) {
+            glfwPollEvents();
+
+            VkCommandBuffer cmd = renderer.beginFrame();
+            renderer.beginSwapChainRenderPass(cmd);
+
+            pipeline->bind(cmd);
+            vkCmdBindDescriptorSets(
+                cmd,
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                pipelineLayout,
+                0, 1, &globalSet,
+                0, nullptr
+            );
+
+            struct PushConstants { glm::mat4 model, normal; } pc{};
+            pc.model = glm::mat4(1.0f);
+            pc.normal = glm::transpose(glm::inverse(pc.model));
+            vkCmdPushConstants(
+                cmd,
+                pipelineLayout,
+                VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                0,
+                sizeof(pc),
+                &pc
+            );
+
+            model->bind(cmd, pipelineLayout);
+            model->draw(cmd);
+
+            renderer.endSwapChainRenderPass(cmd);
+            renderer.endFrame();
+        }
+
+        vkDeviceWaitIdle(device.device());
+        vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Fatal: " << e.what() << "\n";
+        return EXIT_FAILURE;
     }
 
-    vkDeviceWaitIdle(device.device());
-    return 0;
+    return EXIT_SUCCESS;
 }

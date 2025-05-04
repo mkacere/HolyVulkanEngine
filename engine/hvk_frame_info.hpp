@@ -28,6 +28,9 @@ namespace hvk {
 		int frameIndex;
 		float frameTime;
 		VkCommandBuffer commandBuffer;
+		VkRenderPass renderPass;
+		VkFramebuffer framebuffer;
+		VkExtent2D extent;
 		HvkCamera& camera;
 		VkDescriptorSet globalDescriptorSet;
 		HvkGameObject::Map& gameObjects;

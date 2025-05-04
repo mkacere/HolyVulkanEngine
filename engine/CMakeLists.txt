@@ -7,6 +7,8 @@ file(GLOB_RECURSE ENGINE_SOURCES
 # Create a static library for the engine
 add_library(HVKEngine STATIC ${ENGINE_SOURCES})
 
+ add_subdirectory(systems)
+
 # Add external includes
 target_include_directories(HVKEngine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}  # engine/
