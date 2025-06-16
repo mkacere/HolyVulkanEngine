@@ -8,11 +8,11 @@
 #include <stdexcept>
 
 #ifndef ENGINE_DIR
-#define ENGINE_DIR "../"
+#define ENGINE_DIR "../../../../"
 #endif
 
 namespace hvk {
-	HvkPipeline::HvkPipeline(HvkDevice& device, const std::string& vertFilepath, const std::string& fragFilePath, const PipelineConfigInfo& configInfo) :
+	HvkPipeline::HvkPipeline(HvkDevice& device, const std::string& vertFilepath, const std::string& fragFilePath, const HvkPipelineConfigInfo& configInfo) :
 		hvkDevice_(device)
 	{
 		createGrapicsPipeline(vertFilepath, fragFilePath, configInfo);
@@ -30,7 +30,7 @@ namespace hvk {
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline_);
 	}
 
-	void HvkPipeline::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo)
+	void HvkPipeline::defaultPipelineConfigInfo(HvkPipelineConfigInfo& configInfo)
 	{
 		configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -105,7 +105,7 @@ namespace hvk {
 		configInfo.attributeDescriptions = HvkModel::Vertex::getAttributeDescriptions();
 	}
 
-	void HvkPipeline::enableAlphaBlending(PipelineConfigInfo& configInfo)
+	void HvkPipeline::enableAlphaBlending(HvkPipelineConfigInfo& configInfo)
 	{
 		configInfo.colorBlendAttachment.blendEnable = VK_TRUE;
 		configInfo.colorBlendAttachment.colorWriteMask =
@@ -138,7 +138,7 @@ namespace hvk {
 		return buffer;
 	}
 
-	void HvkPipeline::createGrapicsPipeline(const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo)
+	void HvkPipeline::createGrapicsPipeline(const std::string& vertFilepath, const std::string& fragFilepath, const HvkPipelineConfigInfo& configInfo)
 	{
 		assert(
 			configInfo.pipelineLayout != VK_NULL_HANDLE &&
@@ -147,6 +147,8 @@ namespace hvk {
 			configInfo.renderPass != VK_NULL_HANDLE &&
 			"Cannot create graphics pipeline: no renderPass provided in configInfo");
 			
+		pipelineLayout_ = configInfo.pipelineLayout;
+
 		auto vertCode = readFile(vertFilepath);
 		auto fragCode = readFile(fragFilepath);
 

@@ -311,7 +311,7 @@ namespace hvk {
 
     SwapChainSupportDetails HvkDevice::querySwapChainSupport(VkPhysicalDevice device)
     {
-        SwapChainSupportDetails details;
+        SwapChainSupportDetails details{};
 
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface_, &details.capabilities);
 
@@ -407,6 +407,24 @@ namespace hvk {
         }
 
         vkBindBufferMemory(device_, buffer, bufferMemory, 0);
+    }
+
+    VkPipelineLayout HvkDevice::createPipelineLayout(
+        const std::vector<VkDescriptorSetLayout>& setLayouts,
+        const std::vector<VkPushConstantRange>& pushConstants
+    ) const {
+        VkPipelineLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        layoutInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
+        layoutInfo.pSetLayouts = setLayouts.data();
+        layoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
+        layoutInfo.pPushConstantRanges = pushConstants.data();
+
+        VkPipelineLayout pipelineLayout;
+        if (vkCreatePipelineLayout(device_, &layoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create pipeline layout");
+        }
+        return pipelineLayout;
     }
 
     VkCommandBuffer HvkDevice::beginSingleTimeCommands()

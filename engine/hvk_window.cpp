@@ -5,17 +5,42 @@
 
 namespace hvk {
 
-	HvkWindow::HvkWindow(int width, int height, std::string title) : width_(width), height_(height)
+	HvkWindow::HvkWindow(int width, int height, std::string title)
 	{
 		glfwInit();
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-		window_ = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
-		glfwSetWindowUserPointer(window_, this);
+		bool fullscreen = (width == 0 || height == 0);
+		GLFWmonitor* monitor = nullptr;
+		const GLFWvidmode* mode = nullptr;
 
+		if (fullscreen) {
+			glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+
+			monitor = glfwGetPrimaryMonitor();
+			mode = glfwGetVideoMode(monitor);
+
+			width_ = mode->width;
+			height_ = mode->height;
+		}
+		else {
+			width_ = width;
+			height_ = height;
+		}
+
+		window_ = glfwCreateWindow(width_, height_, title.c_str(), nullptr, nullptr);
+
+		if (fullscreen) {
+			glfwSetWindowPos(window_, 0, 0);
+		}
+
+		glfwSetWindowUserPointer(window_, this);
 		glfwSetFramebufferSizeCallback(window_, framebufferResizeCallback);
+
+		lastFrameTime_ = glfwGetTime();
 	}
+
 
 	HvkWindow::~HvkWindow()
 	{
@@ -36,5 +61,13 @@ namespace hvk {
 		hvkWindow->framebufferResized_ = true;
 		hvkWindow->width_ = width;
 		hvkWindow->height_ = height;
+	}
+
+	float HvkWindow::getFrameTime()
+	{
+		double current = glfwGetTime();
+		double delta = current - lastFrameTime_;
+		lastFrameTime_ = current;
+		return static_cast<float>(delta);
 	}
 }

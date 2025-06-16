@@ -24,8 +24,8 @@ namespace hvk {
 		HvkRenderer(const HvkRenderer&) = delete;
 		HvkRenderer& operator=(const HvkRenderer&) = delete;
 
-		void drawFrame(float frameTime, HvkCamera& camera, VkDescriptorSet globalDescriptorSet, HvkGameObject::Map& gameObjects);
-		void addRenderSystem(IRenderSystem* system);
+		void drawFrame(float frameTime, HvkCamera& camera, HvkGameObject::Map& gameObjects);
+		void addRenderSystem(std::unique_ptr<IRenderSystem> system);
 
 		VkRenderPass getSwapChainRenderPass() const { return hvkSwapChain_->getRenderPass(); }
 		float getAspectRatio() const { return hvkSwapChain_->extentAspectRatio(); }
@@ -44,7 +44,7 @@ namespace hvk {
 		VkCommandBuffer beginFrame();
 		void endFrame();
 		void beginSwapChainRenderPass(VkCommandBuffer commandBuffer);
-		void endSwapChainRenderPass(VkCommandBuffer commandBuffer);
+		void endSwapChainRenderPass(VkCommandBuffer commandBuffer) const;
 
 	private:
 		void createCommandBuffers();
@@ -56,7 +56,7 @@ namespace hvk {
 		std::unique_ptr<HvkSwapChain> hvkSwapChain_;
 		std::vector<VkCommandBuffer> commandBuffers_;
 
-		std::vector<IRenderSystem*> renderSystems_;
+		std::vector<std::unique_ptr<IRenderSystem>> renderSystems_;
 
 		uint32_t currentImageIndex_;
 		int currentFrameIndex_ = 0;

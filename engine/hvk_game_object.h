@@ -27,6 +27,8 @@ namespace hvk {
 	class HvkGameObject
 	{
 	public:
+		HvkGameObject() = default;
+
 		using id_t = unsigned int;
 		using Map = std::unordered_map<id_t, HvkGameObject>;
 
@@ -44,11 +46,11 @@ namespace hvk {
 		
 		id_t getId() const { return id_; }
 
-		glm::vec3 color{};
-		TransformComponent transform{};
-
-		std::shared_ptr<HvkModel> model{};
-		std::unique_ptr<PointLightComponent> pointLight = nullptr;
+		glm::vec3 color_{};
+		TransformComponent transform_{};
+		VkDescriptorSet descriptorSet_{};
+		std::shared_ptr<HvkModel> model_{};
+		std::unique_ptr<PointLightComponent> pointLight_ = nullptr;
 
 	private:
 		HvkGameObject(id_t objId) : id_(objId) {}

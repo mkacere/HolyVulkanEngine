@@ -7,10 +7,10 @@
 #include <vector>
 
 namespace hvk {
-	struct PipelineConfigInfo {
-		PipelineConfigInfo() = default;
-		PipelineConfigInfo(const PipelineConfigInfo&) = delete;
-		PipelineConfigInfo& operator=(const PipelineConfigInfo&) = delete;
+	struct HvkPipelineConfigInfo {
+		HvkPipelineConfigInfo() = default;
+		HvkPipelineConfigInfo(const HvkPipelineConfigInfo&) = delete;
+		HvkPipelineConfigInfo& operator=(const HvkPipelineConfigInfo&) = delete;
 
 		std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
@@ -31,7 +31,7 @@ namespace hvk {
 	class HvkPipeline
 	{
 	public:
-		HvkPipeline(HvkDevice& device, const std::string& vertFilepath, const std::string& fragFilePath, const PipelineConfigInfo& configInfo);
+		HvkPipeline(HvkDevice& device, const std::string& vertFilepath, const std::string& fragFilePath, const HvkPipelineConfigInfo& configInfo);
 		~HvkPipeline();
 
 		HvkPipeline(const HvkPipeline&) = delete;
@@ -39,17 +39,19 @@ namespace hvk {
 
 		void bind(VkCommandBuffer commandBuffer);
 
-		static void defaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
-		static void enableAlphaBlending(PipelineConfigInfo& configInfo);
+		static void defaultPipelineConfigInfo(HvkPipelineConfigInfo& configInfo);
+		static void enableAlphaBlending(HvkPipelineConfigInfo& configInfo);
+		VkPipelineLayout getLayout() const { return pipelineLayout_; }
 
 	private:
 		static std::vector<char> readFile(const std::string& filepath);
 
-		void createGrapicsPipeline(const std::string& vertFilepath, const std::string& fragFilepath, const PipelineConfigInfo& configInfo);
+		void createGrapicsPipeline(const std::string& vertFilepath, const std::string& fragFilepath, const HvkPipelineConfigInfo& configInfo);
 		void createShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule);
 
 		HvkDevice& hvkDevice_;
 		VkPipeline graphicsPipeline_;
+		VkPipelineLayout pipelineLayout_{ VK_NULL_HANDLE };
 		VkShaderModule vertShaderModule_;
 		VkShaderModule fragShaderModule_;
 	};

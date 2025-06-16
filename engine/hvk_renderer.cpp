@@ -10,31 +10,42 @@ namespace hvk {
 		hvkWindow_(window), hvkDevice_(device)
 	{
 		recreateSwapChain();
+
+		for (auto& sys : renderSystems_) {
+			sys->init(hvkSwapChain_->getRenderPass(), hvkSwapChain_->getSwapChainExtent());
+		}
+
 		createCommandBuffers();
 	}
 
 	HvkRenderer::~HvkRenderer()
 	{
+		vkDeviceWaitIdle(hvkDevice_.device());
+
+		for (auto& sys : renderSystems_) {
+			sys->cleanup();
+		}
+
 		freeCommandBuffers();
 	}
 
-	void HvkRenderer::drawFrame(float frameTime, HvkCamera& camera, VkDescriptorSet globalDescriptorSet, HvkGameObject::Map& gameObjects) {
+	void HvkRenderer::drawFrame(float frameTime, HvkCamera& camera, HvkGameObject::Map& gameObjects) {
 		VkCommandBuffer cmd = beginFrame();
 		beginSwapChainRenderPass(cmd);
 
+		// Note: no globalDescriptorSet here anymore
 		FrameInfo frameInfo{
-			currentFrameIndex_,
-			frameTime,
-			cmd,
-			hvkSwapChain_->getRenderPass(),
-			hvkSwapChain_->getFrameBuffer(currentFrameIndex_),
-			hvkSwapChain_->getSwapChainExtent(),
-			camera,
-			globalDescriptorSet,
-			gameObjects
+			currentFrameIndex_,                             // frameIndex
+			frameTime,                                      // frameTime
+			cmd,                                            // commandBuffer
+			hvkSwapChain_->getRenderPass(),                 // renderPass
+			hvkSwapChain_->getFrameBuffer(currentFrameIndex_), // framebuffer
+			hvkSwapChain_->getSwapChainExtent(),            // extent
+			camera,                                         // camera ref
+			gameObjects                                     // gameObjects ref
 		};
 
-		for (auto* sys : renderSystems_) {
+		for (auto& sys : renderSystems_) {
 			sys->render(frameInfo);
 		}
 
@@ -42,9 +53,13 @@ namespace hvk {
 		endFrame();
 	}
 
-	void HvkRenderer::addRenderSystem(IRenderSystem* system) 
+	void HvkRenderer::addRenderSystem(std::unique_ptr<IRenderSystem> system)
 	{
-		renderSystems_.push_back(system);
+		system->init(
+			hvkSwapChain_->getRenderPass(),
+			hvkSwapChain_->getSwapChainExtent()
+		);
+		renderSystems_.push_back(std::move(system));
 	}
 
 	void HvkRenderer::recreateSwapChain()
@@ -60,6 +75,10 @@ namespace hvk {
 			hvkSwapChain_ = std::make_unique<HvkSwapChain>(hvkDevice_, extent);
 		}
 		else {
+			for (auto& sys : renderSystems_) {
+				sys->cleanup();
+			}
+
 			std::shared_ptr<HvkSwapChain> oldSwapChain = std::move(hvkSwapChain_);
 			hvkSwapChain_ = std::make_unique<HvkSwapChain>(hvkDevice_, extent, oldSwapChain);
 
@@ -67,6 +86,11 @@ namespace hvk {
 				throw std::runtime_error("Swap chain image(or depth) format has changed!");
 			}
 		}
+
+		for (auto& sys : renderSystems_) {
+			sys->onResize(hvkSwapChain_->getRenderPass(), hvkSwapChain_->getSwapChainExtent());
+		}
+
 	}
 
 	VkCommandBuffer HvkRenderer::beginFrame()
@@ -149,7 +173,7 @@ namespace hvk {
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 	}
 
-	void HvkRenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer)
+	void HvkRenderer::endSwapChainRenderPass(VkCommandBuffer commandBuffer) const
 	{
 		assert(isFrameStarted_ && "Can't call endSwapChainRenderPass if frame is not in progress");
 		assert(commandBuffer == getCurrentCommandBuffer() && "Can't end render pass on command buffer from a different frame");

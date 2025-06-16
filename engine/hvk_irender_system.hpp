@@ -1,15 +1,28 @@
-﻿#pragma once
+﻿#ifndef HVK_IRENDERSYSTEM_HPP
+#define HVK_IRENDERSYSTEM_HPP
+
 #include "hvk_frame_info.hpp"
+#include <vulkan/vulkan.h>
 
 namespace hvk {
 
-	/// Everything a render‐system needs each frame
-	/// (camera, lights, UBOs, game‐objects, cmd buffer, pass, etc.)
-	using FrameInfo = hvk::FrameInfo;
+    class IRenderSystem {
+    public:
+        virtual ~IRenderSystem() = default;
 
-	struct IRenderSystem {
-		virtual ~IRenderSystem() = default;
-		virtual void render(FrameInfo const& frame) = 0;
-	};
+        // Called once after swap chain (and render pass) creation
+        virtual void init(VkRenderPass renderPass, VkExtent2D extent) = 0;
 
-}
+        // Record draw commands for this pass
+        virtual void render(FrameInfo const& frameInfo) = 0;
+
+        // Called when swap chain is recreated (e.g. window resize)
+        virtual void onResize(VkRenderPass renderPass, VkExtent2D extent) = 0;
+
+        // Cleanup Vulkan objects created by this system
+        virtual void cleanup() = 0;
+    };
+
+} // namespace hvk
+
+#endif // HVK_IRENDERSYSTEM_HPP

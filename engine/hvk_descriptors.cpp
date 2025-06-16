@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <algorithm>
 
 namespace hvk {
 
@@ -14,6 +15,7 @@ namespace hvk {
 		layoutBinding.descriptorType = descriptorType;
 		layoutBinding.descriptorCount = count;
 		layoutBinding.stageFlags = stageFlags;
+		layoutBinding.pImmutableSamplers = nullptr;
 		bindings_[binding] = layoutBinding;
 		return *this;
 	}
@@ -26,9 +28,11 @@ namespace hvk {
 		hvkDevice_(device), bindings_(bindings)
 	{
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings{};
-		for (auto& kv : bindings) {
-			setLayoutBindings.push_back(kv.second);
-		}
+		setLayoutBindings.reserve(bindings.size());
+		for (auto& kv : bindings) setLayoutBindings.push_back(kv.second);
+		std::sort(setLayoutBindings.begin(), setLayoutBindings.end(),
+			[](auto& a, auto& b) { return a.binding < b.binding; });
+
 
 		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{};
 		descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

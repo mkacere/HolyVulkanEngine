@@ -10,11 +10,12 @@
 
 namespace hvk {
 
-	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-	};
+    struct SwapChainSupportDetails {  
+       VkSurfaceCapabilitiesKHR capabilities{0};
+	   std::vector<VkSurfaceFormatKHR> formats{};
+	   std::vector<VkPresentModeKHR> presentModes{};
+    };
+
 
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
@@ -28,7 +29,7 @@ namespace hvk {
 	class HvkDevice
 	{
 	public:
-		HvkDevice(HvkWindow &window);
+		HvkDevice(HvkWindow& window);
 		~HvkDevice();
 
 		HvkDevice(const HvkDevice&) = delete;
@@ -47,9 +48,11 @@ namespace hvk {
 		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physicalDevice_); }
 		VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-		
+
 		void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-		
+
+		VkPipelineLayout createPipelineLayout(const std::vector<VkDescriptorSetLayout>& setLayouts, const std::vector<VkPushConstantRange>& pushConstants = {}) const;
+
 		VkCommandBuffer beginSingleTimeCommands();
 
 		void endSingleTimeCommands(VkCommandBuffer commandBuffer);

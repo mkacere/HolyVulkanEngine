@@ -1,16 +1,21 @@
-#include "hvk_game_object.h"
+#include "hvk_game_object.h"   // or .h if that’s your naming convention
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <stdexcept>
 
 namespace hvk {
 
-	HvkGameObject HvkGameObject::makePointLight(float intensity, float radius, glm::vec3 color)
-	{
+    HvkGameObject HvkGameObject::makePointLight(float intensity, float radius, glm::vec3 color)
+    {
         HvkGameObject gameObj = HvkGameObject::createGameObject();
-		gameObj.color = color;
-		gameObj.transform.scale.x = radius;
-		gameObj.pointLight = std::make_unique<PointLightComponent>();
-		gameObj.pointLight->lightIntensity = intensity;
-		return gameObj;
-	}
+        gameObj.color_ = color;
+        gameObj.transform_.scale.x = radius;
+        gameObj.pointLight_ = std::make_unique<PointLightComponent>();
+        gameObj.pointLight_->lightIntensity = intensity;
+        //gameObj.pointLight_->lightColor = color;
+        return gameObj;
+    }
+
     glm::mat4 TransformComponent::mat4()
     {
         const float c3 = glm::cos(rotation.z);
@@ -38,17 +43,19 @@ namespace hvk {
                 scale.z * (c1 * c2),
                 0.0f,
             },
-            {translation.x, translation.y, translation.z, 1.0f} };
+            {translation.x, translation.y, translation.z, 1.0f}
+        };
     }
 
-    glm::mat3 TransformComponent::normalMatrix() {
+    glm::mat3 TransformComponent::normalMatrix()
+    {
+        const glm::vec3 invScale = 1.0f / scale;
         const float c3 = glm::cos(rotation.z);
         const float s3 = glm::sin(rotation.z);
         const float c2 = glm::cos(rotation.x);
         const float s2 = glm::sin(rotation.x);
         const float c1 = glm::cos(rotation.y);
         const float s1 = glm::sin(rotation.y);
-        const glm::vec3 invScale = 1.0f / scale;
 
         return glm::mat3{
             {
@@ -68,4 +75,5 @@ namespace hvk {
             },
         };
     }
-}
+
+} // namespace hvk
