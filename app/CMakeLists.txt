@@ -1,14 +1,21 @@
-# Collect all app source files
-file(GLOB_RECURSE APP_SOURCES
-    *.cpp
-    *.hpp
+# 1. Collect all .cpp and .hpp files in the app directory
+file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp
 )
 
-# Create the executable for the app
+# 2. Create an executable target from the source files
 add_executable(HVKApp ${APP_SOURCES})
 
-# Link the app with engine and external libraries
+# 3. Link with the unified engine library and GLFW
 target_link_libraries(HVKApp
-    HVKEngine
-    glfw
+    PRIVATE
+        HVKEngine     # your unified static engine library
+        glfw          # external dependency
+)
+
+# 4. Optional: expose app include directory
+target_include_directories(HVKApp
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )

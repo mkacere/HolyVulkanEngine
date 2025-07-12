@@ -1,7 +1,7 @@
 #ifndef HVK_GAME_OBJECT
 #define HVK_GAME_OBJECT
 
-#include "hvk_model.h"
+#include "resources/hvk_model.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 

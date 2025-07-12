@@ -1,10 +1,10 @@
 ﻿#pragma once
 #include "hvk_irender_system.hpp"
-#include "hvk_device.h"
-#include "hvk_pipeline.h"
-#include "hvk_model.h"
-#include "hvk_buffer.h"
-#include "hvk_descriptors.h"
+#include "../gfx/hvk_device.h"
+#include "gfx/hvk_pipeline.h"
+#include "resources/hvk_model.h"
+#include "gfx/hvk_buffer.h"
+#include "gfx/hvk_descriptors.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE

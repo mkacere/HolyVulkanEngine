@@ -1,9 +1,9 @@
 #ifndef HVK_MODEL
 #define HVK_MODEL
 
-#include "hvk_buffer.h"
-#include "hvk_device.h"
-#include "hvk_descriptors.h"
+#include "gfx/hvk_buffer.h"
+#include "gfx/hvk_device.h"
+#include "gfx/hvk_descriptors.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -110,6 +110,6 @@ namespace hvk {
         std::shared_ptr<HvkDescriptorSetLayout> descriptorSetLayout_;
         std::shared_ptr<HvkDescriptorPool> descriptorPool_;
     };
-
+    
 } // namespace hvk
 #endif // HVK_MODEL

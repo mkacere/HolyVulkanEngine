@@ -1,7 +1,7 @@
 ﻿#ifndef HVK_IRENDERSYSTEM_HPP
 #define HVK_IRENDERSYSTEM_HPP
 
-#include "hvk_frame_info.hpp"
+#include "gfx/hvk_frame_info.hpp"
 #include <vulkan/vulkan.h>
 
 namespace hvk {

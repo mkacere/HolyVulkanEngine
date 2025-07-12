@@ -2,7 +2,7 @@
 #define HVK_FRAME_INFO
 
 #include "hvk_camera.h"
-#include "hvk_game_object.h"
+#include "scene/hvk_game_object.h"
 #include <vulkan/vulkan.h>
 
 namespace hvk {

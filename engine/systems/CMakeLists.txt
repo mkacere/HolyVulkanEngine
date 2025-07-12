@@ -1,16 +1,12 @@
-# engine/systems/CMakeLists.txt
+file(GLOB_RECURSE SYSTEMS_SRC CONFIGURE_DEPENDS *.cpp *.h)
 
-# Gather all .cpp files in this directory
-file(GLOB SYSTEM_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
-)
+add_library(hvk_systems STATIC ${SYSTEMS_SRC})
 
-# Add them to the engine static library
-target_sources(HVKEngine PRIVATE
-    ${SYSTEM_SOURCES}
-)
+target_include_directories(hvk_systems PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Make sure we can #include "obj_render_system.hpp", etc.
-target_include_directories(HVKEngine PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
+target_link_libraries(hvk_systems
+    PUBLIC
+        hvk_resources
+        hvk_scene
+        hvk_gfx
 )

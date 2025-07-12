@@ -154,6 +154,8 @@ namespace hvk {
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 		createInfo.surface = device_.surface();
 
+		
+
 		createInfo.minImageCount = imageCount;
 		createInfo.imageFormat = surfaceFormat.format;
 		createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -350,8 +352,6 @@ namespace hvk {
 			}
 		}
 	}
-
-
 
 	void HvkSwapChain::createRenderPass()
 	{

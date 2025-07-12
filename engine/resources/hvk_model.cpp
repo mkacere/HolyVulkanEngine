@@ -1,5 +1,5 @@
 ﻿#include "hvk_model.h"
-#include "hvk_utils.hpp"
+#include "gfx/hvk_utils.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -11,8 +11,6 @@
 #include <iostream>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
-
-#include "hvk_utils.hpp"
 
 #include <functional>
 namespace std {

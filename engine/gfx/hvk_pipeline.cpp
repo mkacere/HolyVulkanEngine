@@ -1,6 +1,6 @@
 #include "hvk_pipeline.h"
 
-#include "hvk_model.h"
+#include "resources/hvk_model.h"
 
 #include <cassert>
 #include <fstream>
