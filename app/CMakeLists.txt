@@ -1,21 +1,13 @@
-# 1. Collect all .cpp and .hpp files in the app directory
-file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
-    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp
-)
+# /app/CMakeLists.txt
+add_executable(HVKApp main.cpp)
 
-# 2. Create an executable target from the source files
-add_executable(HVKApp ${APP_SOURCES})
+# Ensure C++20 for the app too
+target_compile_features(HVKApp PRIVATE cxx_std_20)
 
-# 3. Link with the unified engine library and GLFW
-target_link_libraries(HVKApp
-    PRIVATE
-        HVKEngine     # your unified static engine library
-        glfw          # external dependency
-)
+# Link against the engine library target exported by HolyVulkanEngine
+target_link_libraries(HVKApp PRIVATE HVKEngine)
 
-# 4. Optional: expose app include directory
-target_include_directories(HVKApp
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
+# Optional: set the app's runtime dir explicitly (matches root settings)
+set_target_properties(HVKApp PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )

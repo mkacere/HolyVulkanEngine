@@ -1,10 +1,5 @@
-﻿//#include "hvk_window.h"
-#include "gfx/hvk_device.h"
-#include "gfx/hvk_renderer.h"
-#include "gfx/hvk_camera.h"
-#include "scene/hvk_game_object.h"
-#include "gfx/hvk_global_ubo.hpp"
-#include "systems/hvk_model_render_system.h"
+﻿#include <hvk/gfx.hpp>
+#include <hvk/systems.hpp>
 
 #include <GLFW/glfw3.h>
 #include <memory>
