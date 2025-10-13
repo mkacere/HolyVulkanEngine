@@ -14,6 +14,7 @@
 #include <set>
 #include <sstream>
 #include <csignal>
+#include <functional>
 
 // --- Vulkan + GLFW ---
 // Prefer including Vulkan directly, then GLFW (no GLFW_INCLUDE_VULKAN needed)

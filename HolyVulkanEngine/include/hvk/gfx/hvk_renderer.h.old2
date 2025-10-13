@@ -1,0 +1,98 @@
+#pragma once
+#ifndef HVK_RENDERER_HPP
+#define HVK_RENDERER_HPP
+
+#include <vulkan/vulkan.h>
+#include <string>
+#include <string_view>
+#include <vector>
+#include <cstdint>
+
+#include <hvk/gfx/hvk_window.h>
+#include <hvk/gfx/hvk_device.h>
+#include <hvk/gfx/hvk_swapchain.h>
+#include <hvk/gfx/hvk_frame_sync.h>
+#include <hvk/gfx/hvk_cmd_list.hpp>
+#include <hvk/gfx/hvk_barriers.hpp>
+#include <hvk/gfx/hvk_staging_uploader.h>
+#include <hvk/gfx/hvk_gpu_resources.h>
+#include <hvk/gfx/hvk_pipeline_layout_cache.h>
+#include <hvk/gfx/hvk_graphics_pipeline_cache.h>
+#include <hvk/gfx/hvk_render_graph.h>
+
+namespace hvk {
+
+    struct RendererCreateInfo {
+        Window* window = nullptr;   // required
+        Device* device = nullptr;   // required
+
+        // If you want a different demo than triangle, swap these paths later:
+        std::string_view vsSpirvPath = "shaders/tri.vert.spv";
+        std::string_view fsSpirvPath = "shaders/tri.frag.spv";
+
+        bool useDepth = false;             // demo depth target
+        bool preferMailbox = true;         // swapchain present mode
+        uint32_t desiredSwapImages = 3;    // triple-buffer default
+    };
+
+    class Renderer {
+    public:
+        explicit Renderer(const RendererCreateInfo& ci);
+        ~Renderer();
+
+        Renderer(const Renderer&) = delete;
+        Renderer& operator=(const Renderer&) = delete;
+
+        // Render one frame. Returns false if the window requested close.
+        bool renderFrame();
+
+    private:
+        // init steps
+        void createSwapchain();
+        void createFrameSync();
+        void createUploader();
+
+        void createTriangleVB();
+        void createPipeline();      // depends on swapchain format
+        void destroyPipeline();
+
+        void rebuildPipelineIfFormatChanged(); // called after swapchain recreate
+
+        // swapchain maintenance
+        bool recreateSwapchainIfNeeded(); // returns true if recreated
+        void recreateSwapchain();
+
+    private:
+        // external
+        Window* window_ = nullptr;
+        Device* device_ = nullptr;
+
+        // core systems
+        Swapchain swap_{};
+        FrameSync sync_{};
+        StagingUploader uploader_{};
+        RenderGraph rg_;
+
+        // caches
+        PipelineLayoutCache layoutCache_;
+        GraphicsPipelineCache pipeCache_;
+
+        // pipeline state for the demo
+        VkPipelineLayout layout_ = VK_NULL_HANDLE;
+        VkPipeline       pipeline_ = VK_NULL_HANDLE;
+
+        // demo vertex buffer
+        GpuBuffer vb_;
+
+        // shader paths
+        std::string vsPath_;
+        std::string fsPath_;
+
+        // config
+        bool useDepth_ = false;
+        bool swapJustRecreated_ = false;
+    };
+
+} // namespace hvk
+
+#endif // HVK_RENDERER_HPP

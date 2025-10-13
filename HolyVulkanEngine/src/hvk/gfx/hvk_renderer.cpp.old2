@@ -1,0 +1,358 @@
+#include "pch.h"
+
+#include <hvk/gfx/hvk_renderer.h>
+
+namespace hvk {
+
+    static std::vector<uint32_t> loadSpirvFile(const std::string& path) {
+        std::ifstream f(path, std::ios::binary);
+        if (!f) throw std::runtime_error("Renderer: failed to open SPIR-V: " + path);
+        std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(f)), {});
+        if (bytes.size() % 4) throw std::runtime_error("Renderer: SPIR-V not multiple of 4: " + path);
+        std::vector<uint32_t> words(bytes.size() / 4);
+        std::memcpy(words.data(), bytes.data(), bytes.size());
+        return words;
+    }
+
+    struct Vertex { float pos[2]; float color[3]; };
+
+    Renderer::Renderer(const RendererCreateInfo& ci)
+        : window_(ci.window)
+        , device_(ci.device)
+        , rg_({ .device = device_, .framesInFlight = 2, .debugBaseName = "rg" })
+        , layoutCache_(device_, "plc")
+        , pipeCache_(device_, "gpc")
+    {
+        if (!window_ || !device_) throw std::invalid_argument("Renderer: window/device is null");
+        vsPath_ = std::string(ci.vsSpirvPath);
+        fsPath_ = std::string(ci.fsSpirvPath);
+        useDepth_ = ci.useDepth;
+
+        createSwapchain();
+        createFrameSync();
+        createUploader();
+        createTriangleVB();
+        createPipeline();
+    }
+
+    Renderer::~Renderer() {
+        device_->waitIdle();
+        destroyPipeline();
+        // RAII handles the rest
+    }
+
+    // ----------------- init helpers -----------------
+
+    void Renderer::createSwapchain() {
+        SwapchainCreateInfo sci{};
+        sci.device = device_;
+        sci.surface = device_->surface();
+        auto fb = window_->framebufferSize();
+        sci.desiredExtent = { fb.width, fb.height };
+        sci.preferMailbox = true;
+        sci.desiredImageCount = 3;
+        sci.extraUsage = 0;
+        sci.preferredFormats = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_R8G8B8A8_SRGB };
+        sci.debugBaseName = "swap";
+        swap_ = Swapchain(sci);
+    }
+
+    void Renderer::createFrameSync() {
+        FrameSyncCreateInfo syncCI{};
+        syncCI.device = device_->device();
+        syncCI.graphicsQueueFamilyIndex = device_->graphics().family;
+        syncCI.graphicsQueue = device_->graphics().handle;
+        syncCI.presentQueue = device_->present().handle;
+        syncCI.framesInFlight = (std::max)(2u, swap_.imageCount());
+        syncCI.preferTimelineSemaphore = true;
+        sync_ = FrameSync(syncCI);
+    }
+
+    void Renderer::createUploader() {
+        StagingUploaderCreateInfo uci{};
+        uci.device = device_;
+        uci.queue = device_->graphics().handle;           // simple path
+        uci.queueFamilyIndex = device_->graphics().family;
+        uci.framesInFlight = sync_.frameCount();
+        uci.bytesPerFrame = 8u * 1024u * 1024u;
+        uci.debugBaseName = "upload";
+        uploader_ = StagingUploader(uci);
+    }
+
+    void Renderer::createTriangleVB() {
+        // Simple triangle
+        const Vertex tri[3] = {
+            { {-0.5f, -0.5f}, {1,0,0} },
+            { { 0.5f, -0.5f}, {0,1,0} },
+            { { 0.0f,  0.5f}, {0,0,1} },
+        };
+
+        vb_ = GpuBuffer({
+            .device = device_,
+            .size = sizeof(tri),
+            .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            .allocFlags = 0,
+            .memUsage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+            .persistentMap = false,
+            .debugName = "vb.triangle"
+            });
+
+        uploader_.beginFrame(0);
+        auto sl = uploader_.write(tri, sizeof(tri));
+        uploader_.copyBuffer(vb_.handle(), 0, sl);
+        uploader_.submit();
+        uploader_.waitCurrent();
+    }
+
+    void Renderer::createPipeline() {
+        // Empty pipeline layout (no descriptors/push)
+        layout_ = layoutCache_.get({});
+
+        // Load shaders
+        auto vs_bin = loadSpirvFile(vsPath_);
+        auto fs_bin = loadSpirvFile(fsPath_);
+
+        VkShaderModule vsMod{};
+        {
+            VkShaderModuleCreateInfo sci{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
+            sci.codeSize = vs_bin.size() * sizeof(uint32_t);
+            sci.pCode = vs_bin.data();
+            VK_CHECK(vkCreateShaderModule(device_->device(), &sci, nullptr, &vsMod));
+        }
+        VkShaderModule fsMod{};
+        {
+            VkShaderModuleCreateInfo sci{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
+            sci.codeSize = fs_bin.size() * sizeof(uint32_t);
+            sci.pCode = fs_bin.data();
+            VK_CHECK(vkCreateShaderModule(device_->device(), &sci, nullptr, &fsMod));
+        }
+
+        // Describe pipeline
+        ShaderStageDesc vs{};
+        vs.stage = VK_SHADER_STAGE_VERTEX_BIT; vs.module = vsMod; vs.entry = "main";
+        ShaderStageDesc fs{};
+        fs.stage = VK_SHADER_STAGE_FRAGMENT_BIT; fs.module = fsMod; fs.entry = "main";
+
+        // Vertex input
+        struct Vertex { float pos[2]; float color[3]; };
+        VertexInputDesc vi{};
+        vi.bindings.push_back({ 0, (uint32_t)sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX });
+        vi.attributes.push_back({ 0, 0, VK_FORMAT_R32G32_SFLOAT,        0 });
+        vi.attributes.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT,     (uint32_t)offsetof(Vertex, color) });
+
+        // Color blend (one attachment)
+        ColorBlendState cbs{};
+        cbs.attachments.resize(1);
+        cbs.attachments[0].blendEnable = VK_FALSE;
+        cbs.attachments[0].colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+        // Depth (off for this demo; enable when useDepth_)
+        DepthStencilState dss{};
+        dss.depthTestEnable = useDepth_ ? VK_TRUE : VK_FALSE;
+        dss.depthWriteEnable = useDepth_ ? VK_TRUE : VK_FALSE;
+
+        // Raster
+        RasterState rs{};
+        rs.cullMode = VK_CULL_MODE_BACK_BIT;
+        rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+        // Formats for dynamic rendering
+        RenderFormats fmts{};
+        fmts.colorFormats = { swap_.colorFormat() };
+        if (useDepth_) {
+            // pick a depth format you support; this sample leaves UNDEFINED (no depth)
+            // fmts.depthFormat = VK_FORMAT_D32_SFLOAT;
+        }
+
+        GraphicsPipelineDesc gp{};
+        gp.layout = layout_;
+        gp.stages = { vs, fs };
+        gp.vertexInput = vi;
+        gp.raster = rs;
+        gp.depthStencil = dss;
+        gp.colorBlend = cbs;
+        gp.formats = fmts;
+        gp.dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+        pipeline_ = pipeCache_.get(gp);
+
+        // shader modules can be destroyed after pipeline creation
+        vkDestroyShaderModule(device_->device(), vsMod, nullptr);
+        vkDestroyShaderModule(device_->device(), fsMod, nullptr);
+    }
+
+    void Renderer::destroyPipeline() {
+        // The cache owns the VkPipeline lifetimes; if you want to drop them:
+        // pipeCache_.clearPipelines();
+        // Layouts are cached too; you can leave them.
+    }
+
+    // ----------------- swapchain maintenance -----------------
+
+    bool Renderer::recreateSwapchainIfNeeded() {
+        if (!window_->wasResized()) return false;
+        recreateSwapchain();
+        window_->clearResizedFlag();
+        return true;
+    }
+
+    void Renderer::recreateSwapchain() {
+        device_->waitIdle();
+        if (swap_.recreateForWindow(*window_)) {
+            rebuildPipelineIfFormatChanged();
+            swapJustRecreated_ = true;
+        }
+    }
+
+    void Renderer::rebuildPipelineIfFormatChanged() {
+        // Our GraphicsPipelineCache keys include formats; asking again returns an existing or new variant
+        // Just nuke the handle (we keep layout_) and fetch a pipeline variant for the new swapchain format.
+        pipeline_ = VK_NULL_HANDLE;
+
+        // Rebuild desc minimal pieces
+        ColorBlendState cbs{};
+        cbs.attachments.resize(1);
+        cbs.attachments[0].blendEnable = VK_FALSE;
+        cbs.attachments[0].colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+        RasterState rs{};
+        rs.cullMode = VK_CULL_MODE_BACK_BIT;
+        rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+        DepthStencilState dss{};
+        dss.depthTestEnable = useDepth_ ? VK_TRUE : VK_FALSE;
+        dss.depthWriteEnable = useDepth_ ? VK_TRUE : VK_FALSE;
+
+        RenderFormats fmts{};
+        fmts.colorFormats = { swap_.colorFormat() };
+
+        GraphicsPipelineDesc gp{};
+        gp.layout = layout_;
+        // Stages are embedded in the key as modules; we need fresh modules again to create a matching pipeline.
+        // Simple approach: reload shader modules and create new pipeline (cached).
+        auto vs_bin = loadSpirvFile(vsPath_);
+        auto fs_bin = loadSpirvFile(fsPath_);
+        VkShaderModule vsMod{}, fsMod{};
+        {
+            VkShaderModuleCreateInfo sci{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
+            sci.codeSize = vs_bin.size() * 4; sci.pCode = vs_bin.data();
+            VK_CHECK(vkCreateShaderModule(device_->device(), &sci, nullptr, &vsMod));
+            sci.codeSize = fs_bin.size() * 4; sci.pCode = fs_bin.data();
+            VK_CHECK(vkCreateShaderModule(device_->device(), &sci, nullptr, &fsMod));
+        }
+        ShaderStageDesc vs{ VK_SHADER_STAGE_VERTEX_BIT, vsMod, "main" };
+        ShaderStageDesc fs{ VK_SHADER_STAGE_FRAGMENT_BIT, fsMod, "main" };
+
+        struct V { float pos[2]; float color[3]; };
+        VertexInputDesc vi{};
+        vi.bindings.push_back({ 0, (uint32_t)sizeof(V), VK_VERTEX_INPUT_RATE_VERTEX });
+        vi.attributes.push_back({ 0, 0, VK_FORMAT_R32G32_SFLOAT,    0 });
+        vi.attributes.push_back({ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, (uint32_t)offsetof(V, color) });
+
+        gp.stages = { vs, fs };
+        gp.vertexInput = vi;
+        gp.raster = rs;
+        gp.depthStencil = dss;
+        gp.colorBlend = cbs;
+        gp.formats = fmts;
+        gp.dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+        pipeline_ = pipeCache_.get(gp);
+
+        vkDestroyShaderModule(device_->device(), vsMod, nullptr);
+        vkDestroyShaderModule(device_->device(), fsMod, nullptr);
+    }
+
+    // ----------------- per-frame -----------------
+
+    bool Renderer::renderFrame() {
+        if (window_->shouldClose()) return false;
+
+        window_->poll();
+        recreateSwapchainIfNeeded();
+
+        // Begin frame + acquire
+        if (sync_.beginFrame() != VK_SUCCESS) return true;
+
+        uint32_t imageIndex = 0;
+        VkResult acq = sync_.acquireNextImage(swap_.handle(), imageIndex);
+        if (acq == VK_ERROR_OUT_OF_DATE_KHR) {
+            sync_.endFrame();
+            recreateSwapchain();
+            return true;
+        }
+
+        // Build RG for this frame
+        rg_.beginFrame(sync_.currentFrameIndex(), swap_.extent());
+
+        // Import backbuffer
+        auto backbuffer = rg_.importExternalImage({
+            .image = swap_.image(imageIndex),
+            .view = swap_.imageView(imageIndex),
+            .format = swap_.colorFormat(),
+            .width = swap_.extent().width,
+            .height = swap_.extent().height,
+            .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+            .initialUse = hvk::barrier::ImgUse::Undefined // fine; RG will insert attach barrier
+            }, "swap");
+
+        // (Optional) depth
+        RenderGraph::ImageHandle depthH{};
+        if (useDepth_) {
+            depthH = rg_.createTransientImage({
+                .format = VK_FORMAT_D32_SFLOAT,
+                .width = 0, .height = 0, // frame-sized
+                .layers = 1, .levels = 1,
+                .samples = VK_SAMPLE_COUNT_1_BIT,
+                .usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                .viewType = VK_IMAGE_VIEW_TYPE_2D,
+                .aspect = VK_IMAGE_ASPECT_DEPTH_BIT
+                }, "depth");
+        }
+
+        // Add a draw pass
+        rg_.addPass("Triangle",
+            [&](RenderGraph::PassBuilder& b) {
+                b.writeColor({
+                    .image = backbuffer,
+                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                    .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                    .clear = { {0.02f, 0.02f, 0.03f, 1.0f} }
+                    });
+                if (useDepth_) {
+                    b.writeDepth({
+                        .image = depthH,
+                        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                        .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                        .clear = { 1.0f, 0 },
+                        .resolveMode = VK_RESOLVE_MODE_NONE,
+                        .resolveImage = {}
+                        });
+                }
+            },
+            [&](CmdList& cmd) {
+                cmd.setViewportScissor(swap_.extent());
+                cmd.bindGraphicsPipeline(pipeline_);
+                cmd.bindVertexBuffer(0, vb_.handle(), 0);
+                cmd.draw(3);
+            });
+
+        // Compile & execute
+        rg_.compile();
+        rg_.execute(sync_.cmd());
+        rg_.transitionToPresent(sync_.cmd(), backbuffer);
+
+        // Submit & present
+        VkResult pr = sync_.submitAndPresent(swap_.handle(), imageIndex);
+        if (pr == VK_ERROR_OUT_OF_DATE_KHR || pr == VK_SUBOPTIMAL_KHR) {
+            // Recreate on next loop
+        }
+        sync_.endFrame();
+        return true;
+    }
+
+} // namespace hvk

@@ -18,6 +18,7 @@ target_include_directories(HVKEngine
         ${CMAKE_CURRENT_LIST_DIR}/external/stb
         ${CMAKE_CURRENT_LIST_DIR}/external/tinygltf
         ${CMAKE_CURRENT_LIST_DIR}/external/glfw/include
+        ${CMAKE_CURRENT_LIST_DIR}/external/VulkanMemoryAllocator/include
     PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/src
 )
@@ -25,6 +26,11 @@ target_include_directories(HVKEngine
 # Dependencies
 find_package(Vulkan REQUIRED)
 target_link_libraries(HVKEngine PUBLIC Vulkan::Vulkan)
+
+# Windows-specific libraries
+if(WIN32)
+    target_link_libraries(HVKEngine PUBLIC winmm)
+endif()
 
 target_precompile_headers(HVKEngine
   PRIVATE
