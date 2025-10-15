@@ -141,6 +141,15 @@ namespace hvk {
         device_ = nullptr;
     }
 
+    void DescriptorAllocator::move_from(DescriptorAllocator&& o) noexcept {
+        device_ = o.device_;  o.device_ = nullptr;
+        maxSetsPerPool_ = o.maxSetsPerPool_; o.maxSetsPerPool_ = 0;
+        basePoolSizes_ = std::move(o.basePoolSizes_);
+        regular_ = std::move(o.regular_);
+        updateAfterBind_ = std::move(o.updateAfterBind_);
+        baseName_ = std::move(o.baseName_);
+    }
+
     DescriptorAllocator::PoolBucket& DescriptorAllocator::bucketForLayout(const DescriptorSetLayout& layout) {
         if (layout.usesUpdateAfterBindPool()) {
             // if disabled at allocator creation, still use regular to avoid hard fail

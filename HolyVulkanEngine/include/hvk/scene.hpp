@@ -1,4 +1,4 @@
 #pragma once
 
-#include <hvk/scene/hvk_camera.h>
-#include <hvk/scene/hvk_game_object.h>
+#include <hvk/scene/hvk_camera.hpp>
+#include <hvk/scene/hvk_camera_controller.hpp>

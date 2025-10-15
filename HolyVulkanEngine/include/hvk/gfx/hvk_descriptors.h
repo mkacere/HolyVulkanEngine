@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cassert>
 #include <optional>
+#include <deque>
 
 namespace hvk {
 
@@ -171,9 +172,9 @@ namespace hvk {
 
     private:
         std::vector<VkWriteDescriptorSet> writes_;
-        std::vector<VkDescriptorImageInfo> imageInfos_;
-        std::vector<VkDescriptorBufferInfo> bufferInfos_;
-        std::vector<VkBufferView> texelViews_;
+        std::deque<VkDescriptorImageInfo> imageInfos_;
+        std::deque<VkDescriptorBufferInfo> bufferInfos_;
+        std::deque<VkBufferView> texelViews_;
     };
 
     // ------------------------------- BindlessSet (optional) ----------------------

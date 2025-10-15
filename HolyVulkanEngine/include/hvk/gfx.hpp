@@ -31,10 +31,17 @@
 #include <hvk/gfx/hvk_deferred_deletion.hpp>
 
 // Synchronization and frame management
-//#include <hvk/gfx/hvk_frame_info.hpp>
+//#include <hvk/gfx/hvk_frame_info.hpp>  // Old, use hvk_frame_context.hpp instead
 #include <hvk/gfx/hvk_frame_sync.h>
+#include <hvk/gfx/hvk_frame_context.hpp>
+
+// Uniform data structures (modern tiered system)
 #include <hvk/gfx/hvk_dynamic_uniforms.hpp>
-#include <hvk/gfx/hvk_global_ubo.hpp>
+//#include <hvk/gfx/hvk_global_ubo.hpp>  // Old, use hvk_scene_data/camera_data/light_data instead
+#include <hvk/gfx/hvk_scene_data.hpp>
+#include <hvk/gfx/hvk_camera_data.hpp>
+#include <hvk/gfx/hvk_light_data.hpp>
+#include <hvk/gfx/hvk_global_descriptors.hpp>
 
 // Profiling and debugging
 #include <hvk/gfx/hvk_gpu_profiler.h>

@@ -18,6 +18,8 @@ Holy Vulkan Engine (HVK) is a Vulkan-based 3D rendering engine that provides a s
 - **Shader Management**: Automatic GLSL to SPIR-V compilation during build
 - **Descriptor Management**: Simplified descriptor set creation and binding
 
+![HVK Miku Demo](.images/miku_demo.png)
+
 ## Prerequisites
 
 - C++20 compatible compiler (MSVC 2019+, GCC 10+, or Clang 10+)

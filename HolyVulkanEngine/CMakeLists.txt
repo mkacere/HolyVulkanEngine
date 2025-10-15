@@ -49,6 +49,7 @@ else()
 endif()
 
 # Submodules (each has a CMakeLists.txt that GLOB_RECURSEs *.cpp and calls target_sources)
+add_subdirectory(src/hvk/core)
 add_subdirectory(src/hvk/gfx)
 add_subdirectory(src/hvk/resources)
 add_subdirectory(src/hvk/scene)
