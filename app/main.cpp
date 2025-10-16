@@ -31,8 +31,8 @@ int main() {
         // 1) Initialize window + device --------------------------------------------
         std::cout << "[1/9] Creating window and Vulkan device..." << std::endl;
         Window window({
-            .width = 560,
-            .height = 780,
+            .width = 1280,
+            .height = 720,
             .title = "HVK - Model Demo (WASD + Mouse to move, ESC to toggle cursor)",
             .mode = WindowMode::Auto
         });
@@ -97,9 +97,9 @@ int main() {
         DescriptorSetLayout materialLayout = Material::createDescriptorSetLayout(device);
 
         // Load model
+        const char* modelPath = PROJECT_ROOT "/assets/models/hk_mp7_a1.glb";
         //const char* modelPath = PROJECT_ROOT "/assets/models/miku.glb";
-        const char* modelPath = PROJECT_ROOT "/assets/models/Crystar_Kokoro_Fudoji.glb";
-        //const char* modelPath = PROJECT_ROOT "/assets/models/kawashaki_ninja_h2.glb";
+        //const char* modelPath = PROJECT_ROOT "/assets/models/Crystar_Kokoro_Fudoji.glb";
         std::cout << "    Loading: " << modelPath << std::endl;
 
         GltfLoaderOptions loaderOptions;
@@ -108,7 +108,7 @@ int main() {
         loaderOptions.loadTextures = true;
         loaderOptions.flipTextureY = false;
         loaderOptions.forceLinearTextures = false;
-        loaderOptions.verbose = true;
+        loaderOptions.verbose = false;
 
         Model model = GltfLoader::loadFromFile(
             device,
@@ -174,9 +174,9 @@ int main() {
         float aspect = static_cast<float>(window.framebufferSize().width) /
                        static_cast<float>(window.framebufferSize().height);
 
-        // Frame camera to model bounds so it’s visible regardless of asset scale
+        // Frame camera to model bounds so it's visible regardless of asset scale
         const auto& bounds = model.bounds();
-        glm::vec3 center = (bounds.min + bounds.max) * 0.5f;
+        glm::vec3 center = -(bounds.min + bounds.max) * 0.5f;
         float diag = glm::length(bounds.max - bounds.min);
         float radius = (diag > 0.0001f) ? (diag * 0.5f) : 1.0f;
         glm::vec3 viewDir = glm::normalize(glm::vec3(1.0f, 0.5f, 1.0f));
@@ -184,7 +184,7 @@ int main() {
 
         Camera camera = Camera::createPerspective(
             camPos,                         // position
-            center,                         // look-at model center
+            -center,                         // look-at model center
             60.0f,                          // FOV
             aspect,                         // aspect ratio
             0.1f,                           // near plane
@@ -565,10 +565,7 @@ int main() {
             );
 
             // Render model
-            // Apply root transform to fix model orientation if needed
-            // Example: Rotate 90° around X-axis to convert Z-up to Y-up
-            // glm::mat4 modelTransform = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            glm::mat4 modelTransform = glm::mat4(1.0f); // Identity for now
+            glm::mat4 modelTransform = glm::mat4(1.0f);
             model.draw(cmd, modelPipelineLayout, globalSet, modelTransform);
 
             cmd.endRendering();

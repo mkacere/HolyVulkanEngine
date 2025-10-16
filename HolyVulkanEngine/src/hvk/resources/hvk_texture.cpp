@@ -195,6 +195,14 @@ Texture Texture::loadFromFile(
     // Free CPU data
     stbi_image_free(pixels);
 
+    // Generate mipmaps or transition to shader-read layout
+    CmdList cmd{ uploader.cmd() };
+    if (info.generateMips && tex.mipLevels() > 1) {
+        tex.generateMipmaps(cmd);
+    } else {
+        tex.transitionToShaderRead(cmd);
+    }
+
     return tex;
 }
 
