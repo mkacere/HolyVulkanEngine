@@ -298,13 +298,17 @@ void loadMaterials(
 }
 
 // Helper: Load meshes
-void loadMeshes(
+// Returns a mapping: gltfMeshIndex -> [engineMeshIndex1, engineMeshIndex2, ...]
+// This is needed because each GLTF mesh can have multiple primitives, which become separate engine meshes
+std::vector<std::vector<int32_t>> loadMeshes(
     Model& model,
     const tinygltf::Model& gltf,
     const Device& device,
     StagingUploader& uploader,
     const GltfLoaderOptions& options
 ) {
+    std::vector<std::vector<int32_t>> gltfMeshToEngineMeshes(gltf.meshes.size());
+
     for (size_t meshIdx = 0; meshIdx < gltf.meshes.size(); ++meshIdx) {
         const auto& gltfMesh = gltf.meshes[meshIdx];
 
@@ -408,7 +412,8 @@ void loadMeshes(
                 mesh.setMaterial(model.material(prim.material));
             }
 
-            model.addMesh(std::move(mesh));
+            int32_t engineMeshIndex = static_cast<int32_t>(model.addMesh(std::move(mesh)));
+            gltfMeshToEngineMeshes[meshIdx].push_back(engineMeshIndex);
 
             if (options.verbose) {
                 std::cout << "Loaded mesh: " << meshName << " (" << vertexCount << " verts, "
@@ -416,10 +421,17 @@ void loadMeshes(
             }
         }
     }
+
+    return gltfMeshToEngineMeshes;
 }
 
 // Helper: Load nodes
-void loadNodes(Model& model, const tinygltf::Model& gltf, const GltfLoaderOptions& options) {
+void loadNodes(
+    Model& model,
+    const tinygltf::Model& gltf,
+    const std::vector<std::vector<int32_t>>& gltfMeshToEngineMeshes,
+    const GltfLoaderOptions& options
+) {
     // First pass: create all nodes
     for (size_t i = 0; i < gltf.nodes.size(); ++i) {
         const auto& gltfNode = gltf.nodes[i];
@@ -458,15 +470,47 @@ void loadNodes(Model& model, const tinygltf::Model& gltf, const GltfLoaderOption
             node.localTransform = translation * rotation * scale;
         }
 
-        // Mesh reference
-        if (gltfNode.mesh >= 0) {
-            node.meshIndex = gltfNode.mesh;
+        // Mesh reference: handle multi-primitive GLTF meshes
+        if (gltfNode.mesh >= 0 && gltfNode.mesh < static_cast<int>(gltfMeshToEngineMeshes.size())) {
+            const auto& engineMeshIndices = gltfMeshToEngineMeshes[gltfNode.mesh];
+
+            if (!engineMeshIndices.empty()) {
+                // Assign the first primitive to this node
+                node.meshIndex = engineMeshIndices[0];
+            }
         }
 
         model.addNode(node);
     }
 
-    // Second pass: setup parent-child relationships
+    // Create virtual child nodes for multi-primitive meshes (primitives after the first)
+    // We need to track which nodes have multi-primitive meshes so we can attach the child nodes
+    size_t originalNodeCount = model.nodeCount();
+    for (size_t i = 0; i < originalNodeCount; ++i) {
+        const auto& gltfNode = gltf.nodes[i];
+
+        if (gltfNode.mesh >= 0 && gltfNode.mesh < static_cast<int>(gltfMeshToEngineMeshes.size())) {
+            const auto& engineMeshIndices = gltfMeshToEngineMeshes[gltfNode.mesh];
+
+            // Create child nodes for additional primitives (primitives 1+)
+            if (engineMeshIndices.size() > 1) {
+                Node* parentNode = model.node(i);
+
+                for (size_t primIdx = 1; primIdx < engineMeshIndices.size(); ++primIdx) {
+                    Node childNode;
+                    childNode.name = parentNode->name + "_prim" + std::to_string(primIdx);
+                    childNode.localTransform = glm::mat4(1.0f);  // Identity (same position as parent)
+                    childNode.meshIndex = engineMeshIndices[primIdx];
+                    childNode.parentIndex = static_cast<int32_t>(i);
+
+                    int32_t childNodeIndex = static_cast<int32_t>(model.addNode(childNode));
+                    parentNode->children.push_back(childNodeIndex);
+                }
+            }
+        }
+    }
+
+    // Second pass: setup parent-child relationships (from original GLTF nodes)
     for (size_t i = 0; i < gltf.nodes.size(); ++i) {
         const auto& gltfNode = gltf.nodes[i];
         Node* node = model.node(i);
@@ -480,13 +524,20 @@ void loadNodes(Model& model, const tinygltf::Model& gltf, const GltfLoaderOption
     }
 
     // Set root node (first node in default scene, or first node if no scene)
+    // IMPORTANT: GLTF scenes can have MULTIPLE root nodes (scene.nodes is an array).
+    // Instead of picking just the first one, we leave rootNodeIndex as -1 when there are
+    // multiple roots, so that Model::draw() will iterate through ALL top-level nodes.
+    // This ensures all scene content is rendered, not just the first hierarchy.
     if (!gltf.scenes.empty()) {
         int defaultScene = gltf.defaultScene >= 0 ? gltf.defaultScene : 0;
         if (defaultScene < static_cast<int>(gltf.scenes.size())) {
             const auto& scene = gltf.scenes[defaultScene];
-            if (!scene.nodes.empty()) {
+            if (scene.nodes.size() == 1) {
+                // Single root node - set it explicitly
                 model.setRootNode(scene.nodes[0]);
             }
+            // If multiple root nodes or empty, leave rootNodeIndex_ as -1
+            // so Model::draw() will iterate through all top-level nodes
         }
     } else if (model.nodeCount() > 0) {
         model.setRootNode(0);
@@ -555,8 +606,8 @@ Model GltfLoader::loadFromFile(
         loadMaterials(model, gltf, device, descriptorAllocator, materialLayout, options);
     }
 
-    loadMeshes(model, gltf, device, uploader, options);
-    loadNodes(model, gltf, options);
+    auto gltfMeshToEngineMeshes = loadMeshes(model, gltf, device, uploader, options);
+    loadNodes(model, gltf, gltfMeshToEngineMeshes, options);
 
     // Update transforms
     model.updateTransforms();

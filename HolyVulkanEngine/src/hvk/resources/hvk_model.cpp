@@ -41,16 +41,44 @@ void Model::draw(
     vkCmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipelineLayout, 0, 1, &globalDescSet, 0, nullptr);
 
-    // Draw from root node
+    // DEBUG: Log draw start
+    static bool firstFrame = true;
+    if (firstFrame) {
+        std::cout << "\n=== Model::draw() DEBUG ===" << std::endl;
+        std::cout << "  Total nodes: " << nodes_.size() << std::endl;
+        std::cout << "  Total meshes: " << meshes_.size() << std::endl;
+        std::cout << "  Root node index: " << rootNodeIndex_ << std::endl;
+    }
+
+    // Draw from root node (if set) AND any orphaned nodes
+    // IMPORTANT: Some GLTF files have both scene root nodes AND orphaned nodes.
+    // We must draw ALL top-level nodes (parentIndex == -1) to ensure everything renders.
     if (rootNodeIndex_ >= 0 && rootNodeIndex_ < static_cast<int32_t>(nodes_.size())) {
+        if (firstFrame) std::cout << "  Drawing from root node " << rootNodeIndex_ << std::endl;
         drawNode(rootNodeIndex_, cmd, pipelineLayout, globalDescSet, modelTransform);
-    } else {
-        // No root, draw all top-level nodes
+
+        // Also draw any OTHER top-level nodes (orphaned nodes not in the main hierarchy)
+        if (firstFrame) std::cout << "  Drawing additional top-level nodes (if any):" << std::endl;
         for (size_t i = 0; i < nodes_.size(); ++i) {
-            if (nodes_[i].parentIndex == -1) {
+            if (nodes_[i].parentIndex == -1 && static_cast<int32_t>(i) != rootNodeIndex_) {
+                if (firstFrame) std::cout << "    Orphaned node " << i << ": " << nodes_[i].name << std::endl;
                 drawNode(static_cast<int32_t>(i), cmd, pipelineLayout, globalDescSet, modelTransform);
             }
         }
+    } else {
+        // No root, draw all top-level nodes
+        if (firstFrame) std::cout << "  No root, drawing all top-level nodes:" << std::endl;
+        for (size_t i = 0; i < nodes_.size(); ++i) {
+            if (nodes_[i].parentIndex == -1) {
+                if (firstFrame) std::cout << "    Top-level node " << i << ": " << nodes_[i].name << std::endl;
+                drawNode(static_cast<int32_t>(i), cmd, pipelineLayout, globalDescSet, modelTransform);
+            }
+        }
+    }
+
+    if (firstFrame) {
+        std::cout << "=== End Model::draw() DEBUG ===" << std::endl;
+        firstFrame = false;
     }
 }
 
@@ -70,9 +98,18 @@ void Model::drawNode(
     // Do not reapply parent transforms recursively (worldTransform already includes hierarchy).
     glm::mat4 nodeTransform = modelTransform * node.worldTransform;
 
+    // DEBUG: Log node draw (first frame only)
+    static bool firstFrame = true;
+
     // Draw mesh if this node has one
     if (node.meshIndex >= 0 && node.meshIndex < static_cast<int32_t>(meshes_.size())) {
         const Mesh& mesh = meshes_[node.meshIndex];
+
+        if (firstFrame) {
+            const char* materialName = mesh.material() ? mesh.material()->name().c_str() : "none";
+            std::cout << "  Drawing node '" << node.name << "' (idx " << nodeIndex
+                      << ") -> mesh " << node.meshIndex << " with material '" << materialName << "'" << std::endl;
+        }
 
         // Compute normal matrix (inverse transpose of upper-left 3x3)
         glm::mat3 normalMat = glm::transpose(glm::inverse(glm::mat3(nodeTransform)));
@@ -105,6 +142,11 @@ void Model::drawNode(
     // Recursively draw children
     for (int32_t childIndex : node.children) {
         drawNode(childIndex, cmd, pipelineLayout, globalDescSet, modelTransform);
+    }
+
+    // DEBUG: Mark first frame complete (do this once for the whole tree)
+    if (firstFrame && nodeIndex == 0) {
+        firstFrame = false;
     }
 }
 

@@ -242,6 +242,11 @@ void main() {
 
     // DEBUG 6: Check if using default white texture (will show magenta if default)
     // if (length(albedoSample.rgb - vec3(1.0)) < 0.01) { outColor = vec4(1, 0, 1, 1); return; }
+
+    // DEBUG 7: Color by alphaMode (OPAQUE=green, MASK=blue, BLEND=red)
+    // if (pc.alphaMode == 0u) { outColor = vec4(0, 1, 0, 1); return; }      // OPAQUE = green
+    // else if (pc.alphaMode == 1u) { outColor = vec4(0, 0, 1, 1); return; } // MASK = blue
+    // else if (pc.alphaMode == 2u) { outColor = vec4(1, 0, 0, 1); return; } // BLEND = red
     // ===== END DEBUG MODES =====
 
     // WORKAROUND: If baseColorFactor is black but we have white default texture, use texture as-is

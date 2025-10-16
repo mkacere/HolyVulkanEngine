@@ -9,7 +9,7 @@
 #include <iostream>
 
 #ifndef PROJECT_ROOT
-#define PROJECT_ROOT .
+#define PROJECT_ROOT "."
 #endif
 
 using namespace hvk;
@@ -97,8 +97,8 @@ int main() {
         DescriptorSetLayout materialLayout = Material::createDescriptorSetLayout(device);
 
         // Load model
-        const char* modelPath = PROJECT_ROOT "/assets/models/miku.glb";
-        //const char* modelPath = PROJECT_ROOT "/assets/models/Crystar_Kokoro_Fudoji.glb";
+        //const char* modelPath = PROJECT_ROOT "/assets/models/miku.glb";
+        const char* modelPath = PROJECT_ROOT "/assets/models/Crystar_Kokoro_Fudoji.glb";
         //const char* modelPath = PROJECT_ROOT "/assets/models/kawashaki_ninja_h2.glb";
         std::cout << "    Loading: " << modelPath << std::endl;
 
