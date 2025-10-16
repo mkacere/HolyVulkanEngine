@@ -27,19 +27,19 @@ static std::vector<uint32_t> loadSpirv(const char* path) {
 
 int main() {
     try {
-        std::cout << "=== Holy Vulkan Engine - GLTF Model Demo ===" << std::endl;
+        std::cout << "=== Holy Vulkan Engine - Grid Demo ===" << std::endl;
 
-        // 1) Initialize window + device --------------------------------------------
+        // 1) Initialize window + device
         std::cout << "[1/9] Creating window and Vulkan device..." << std::endl;
         Window window({
             .width = 1280,
             .height = 720,
-            .title = "HVK - Model Demo (WASD + Mouse to move, ESC to toggle cursor)",
-            .mode = WindowMode::Auto
+            .title = "HVK - Grid Demo (WASD + Mouse, ESC to toggle cursor)",
+            .mode = WindowMode::Windowed
         });
         Device device(window, { .debugVerbosity = DebugVerbosity::Warn });
 
-        // 2) Swapchain -------------------------------------------------------------
+        // 2) Swapchain
         std::cout << "[2/9] Creating swapchain..." << std::endl;
         Swapchain swap({
             .device = &device,
@@ -52,7 +52,7 @@ int main() {
             .debugBaseName = "swap"
         });
 
-        // 3) Frame sync ------------------------------------------------------------
+        // 3) Frame sync
         std::cout << "[3/9] Setting up frame synchronization..." << std::endl;
         FrameSyncCreateInfo syncCI{};
         syncCI.device = device.device();
@@ -63,23 +63,23 @@ int main() {
         syncCI.preferTimelineSemaphore = true;
         FrameSync sync(syncCI);
 
-        // 4) Staging uploader ------------------------------------------------------
+        // 4) Staging uploader
         std::cout << "[4/9] Creating staging uploader..." << std::endl;
         StagingUploader uploader({
             .device = &device,
             .queue = device.graphics().handle,
             .queueFamilyIndex = device.graphics().family,
             .framesInFlight = sync.frameCount(),
-            .bytesPerFrame = 64 * 1024 * 1024,  // 64 MB per frame for model loading
+            .bytesPerFrame = 64 * 1024 * 1024,
             .debugBaseName = "upload"
         });
 
-        // 5) Initialize core systems -----------------------------------------------
+        // 5) Initialize core systems
         std::cout << "[5/9] Initializing Input and Time systems..." << std::endl;
         Input::init(window.glfwHandle());
         Time::init();
 
-        // 6) Create caches ---------------------------------------------------------
+        // 6) Create caches
         std::cout << "[6/9] Creating descriptor and pipeline caches..." << std::endl;
         SamplerCache samplerCache(&device, "samplers");
         PipelineLayoutCache layoutCache(&device, "plc");
@@ -91,114 +91,85 @@ int main() {
         allocCI.debugName = "desc_alloc";
         DescriptorAllocator descAllocator(allocCI);
 
-        // 7) Load GLTF model -------------------------------------------------------
-        std::cout << "[7/9] Loading GLTF model from assets..." << std::endl;
+        // 7) Create grid
+        std::cout << "[7/9] Creating grid..." << std::endl;
 
-        // Create material descriptor set layout
         DescriptorSetLayout materialLayout = Material::createDescriptorSetLayout(device);
 
-        // Load model
-        //const char* modelPath = PROJECT_ROOT "/assets/models/hk_mp7_a1.glb";
-        const char* modelPath = PROJECT_ROOT "/assets/models/miku.glb";
-        //const char* modelPath = PROJECT_ROOT "/assets/models/Crystar_Kokoro_Fudoji.glb";
-        std::cout << "    Loading: " << modelPath << std::endl;
+        // Create model to hold grid
+        Model gridModel;
+        gridModel.createDefaultTextures(device, uploader, samplerCache);
 
-        GltfLoaderOptions loaderOptions;
-        loaderOptions.generateMipmaps = true;
-        loaderOptions.loadMaterials = true;
-        loaderOptions.loadTextures = true;
-        loaderOptions.flipTextureY = false;
-        loaderOptions.forceLinearTextures = false;
-        loaderOptions.verbose = false;
+        // Reserve space
+        gridModel.reserveMaterials(1);
+        gridModel.reserveMeshes(1);
+        gridModel.reserveNodes(1);
 
-        Model model = GltfLoader::loadFromFile(
-            device,
-            uploader,
-            descAllocator,
-            materialLayout,
-            samplerCache,
-            modelPath,
-            loaderOptions
-        );
+        // Create grid geometry (50m x 50m grid, 1m spacing)
+        std::cout << "    Creating 50m x 50m grid with 1m spacing..." << std::endl;
+        auto [verts, indices] = Primitives::createGrid(50.0f, 1.0f, glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
+        std::cout << "      " << verts.size() << " verts, " << indices.size() << " indices" << std::endl;
 
-        std::cout << "    Model loaded successfully!" << std::endl;
-        std::cout << "    - Textures: " << model.textureCount() << std::endl;
-        std::cout << "    - Materials: " << model.materialCount() << std::endl;
-        std::cout << "    - Meshes: " << model.meshCount() << std::endl;
-        std::cout << "    - Nodes: " << model.nodeCount() << std::endl;
+        // Create material with gray color
+        Material mat = MaterialBuilder()
+            .withBaseColorFactor(glm::vec4(0.7f, 0.7f, 0.7f, 1.0f))
+            .withMetallicFactor(0.0f)
+            .withRoughnessFactor(1.0f)
+            .withName("GridMat")
+            .build(device, descAllocator, materialLayout,
+                   gridModel.defaultWhiteTexture(),
+                   gridModel.defaultNormalTexture(),
+                   gridModel.defaultMetallicRoughnessTexture());
 
-        // 8) Setup global descriptors ----------------------------------------------
-        std::cout << "[8/9] Setting up global descriptors (Scene, Camera, Lights)..." << std::endl;
+        size_t matIdx = gridModel.addMaterial(std::move(mat));
 
+        // Create mesh
+        uploader.beginFrame(0);
+        Mesh mesh;
+        mesh.create(device, uploader, verts, indices, gridModel.material(matIdx), "Grid");
+        uploader.submit();
+        uploader.waitCurrent();
+
+        size_t meshIdx = gridModel.addMesh(std::move(mesh));
+
+        // Create node
+        Node node;
+        node.name = "Grid";
+        node.meshIndex = static_cast<int32_t>(meshIdx);
+        node.localTransform = glm::mat4(1.0f);  // Identity at origin
+        node.worldTransform = node.localTransform;
+        gridModel.addNode(node);
+
+        std::cout << "    Grid created successfully!" << std::endl;
+
+        // 8) Setup global descriptors
+        std::cout << "[8/9] Setting up global descriptors..." << std::endl;
         DescriptorSetLayout globalLayout = GlobalDescriptorLayout::create(device);
-
         GlobalDescriptorSet globalDescriptors;
         globalDescriptors.init(device, descAllocator, globalLayout, sync.frameCount());
 
-        // Initialize scene data
         SceneData sceneData{};
-        sceneData.ambientColor = glm::vec4(0.3f, 0.3f, 0.35f, 1.0f); // Simple ambient
-        sceneData.fogColor = glm::vec4(0.1f, 0.1f, 0.15f, 1.0f);
-        sceneData.fogRange = glm::vec2(50.0f, 100.0f);
+        sceneData.ambientColor = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f);
 
-        // Setup lights
         LightBuffer lightBuffer;
-
-        // Directional light (sun) - simple intensity
         lightBuffer.lights.push_back(Light::makeDirectional(
-            glm::vec3(-0.3f, -1.0f, -0.5f),  // direction
-            glm::vec3(1.0f, 1.0f, 1.0f),     // white light
-            0.7f                              // intensity
-        ));
+            glm::vec3(-0.3f, -1.0f, -0.5f), glm::vec3(1.0f, 1.0f, 1.0f), 0.7f));
+        lightBuffer.lightCount = 1;
 
-        // Point light (key light)
-        lightBuffer.lights.push_back(Light::makePoint(
-            glm::vec3(5.0f, 3.0f, 5.0f),     // position
-            glm::vec3(1.0f, 1.0f, 1.0f),     // color (white)
-            3.0f,                             // intensity
-            20.0f                             // range
-        ));
-
-        // Point light (fill light)
-        lightBuffer.lights.push_back(Light::makePoint(
-            glm::vec3(-5.0f, 2.0f, 3.0f),    // position
-            glm::vec3(0.4f, 0.5f, 0.8f),     // color (cool blue)
-            1.5f,                             // intensity
-            15.0f                             // range
-        ));
-
-        lightBuffer.lightCount = static_cast<uint32_t>(lightBuffer.lights.size());
-
-        // 9) Setup camera and controller -------------------------------------------
-        std::cout << "[9/9] Setting up camera and controls..." << std::endl;
-
+        // 9) Setup camera
+        std::cout << "[9/9] Setting up camera..." << std::endl;
         float aspect = static_cast<float>(window.framebufferSize().width) /
                        static_cast<float>(window.framebufferSize().height);
 
-        // Frame camera to model bounds so it's visible regardless of asset scale
-        const auto& bounds = model.bounds();
-        glm::vec3 center = -(bounds.min + bounds.max) * 0.5f;
-        float diag = glm::length(bounds.max - bounds.min);
-        float radius = (diag > 0.0001f) ? (diag * 0.5f) : 1.0f;
-        glm::vec3 viewDir = glm::normalize(glm::vec3(1.0f, 0.5f, 1.0f));
-        glm::vec3 camPos = center + viewDir * (radius * 2.5f);
-
         Camera camera = Camera::createPerspective(
-            camPos,                         // position
-            -center,                         // look-at model center
-            60.0f,                          // FOV
-            aspect,                         // aspect ratio
-            0.1f,                           // near plane
-            std::max(1000.0f, radius * 10.0f) // far plane
-        );
+            glm::vec3(0.0f, 5.0f, 10.0f),  // Position above and back from origin
+            glm::vec3(0.0f, 0.0f, 0.0f),   // Look at origin
+            60.0f, aspect, 0.1f, 1000.0f);
 
         CameraController cameraController;
         cameraController.setMode(CameraController::Mode::FPS);
-        cameraController.setMoveSpeed(5.0f);
-        cameraController.setFastMoveMultiplier(3.0f);
+        cameraController.setMoveSpeed(10.0f);  // Faster movement for large grid
         cameraController.setMouseSensitivity(0.15f);
-
-        // Start with cursor disabled for FPS controls
         Input::setCursorMode(GLFW_CURSOR_DISABLED);
 
         std::cout << "\n=== Controls ===" << std::endl;
@@ -210,50 +181,38 @@ int main() {
         std::cout << "  ESC: Toggle cursor lock" << std::endl;
         std::cout << "\n[10/11] Creating rendering pipeline..." << std::endl;
 
-        // 10) Query MSAA support and create MSAA + depth buffers ------------------
-        // Query max MSAA sample count supported by device
+        // 10) Create MSAA + depth buffers
         VkSampleCountFlags counts = device.limits().framebufferColorSampleCounts &
                                      device.limits().framebufferDepthSampleCounts;
-
         VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
         if (counts & VK_SAMPLE_COUNT_4_BIT) {
             msaaSamples = VK_SAMPLE_COUNT_4_BIT;
             std::cout << "    MSAA: Enabled (4x samples)" << std::endl;
-        } else if (counts & VK_SAMPLE_COUNT_2_BIT) {
-            msaaSamples = VK_SAMPLE_COUNT_2_BIT;
-            std::cout << "    MSAA: Enabled (2x samples)" << std::endl;
-        } else {
-            std::cout << "    MSAA: Disabled (not supported)" << std::endl;
         }
 
         VkExtent2D ext = swap.extent();
 
-        // Create MSAA color buffer (if MSAA enabled)
         GpuImage msaaColorImage;
         ImageView msaaColorView;
         if (msaaSamples != VK_SAMPLE_COUNT_1_BIT) {
-            GpuImageCreateInfo msaaColorCI{};
-            msaaColorCI.device = &device;
-            msaaColorCI.format = swap.colorFormat();
-            msaaColorCI.width = ext.width;
-            msaaColorCI.height = ext.height;
-            msaaColorCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-            msaaColorCI.samples = msaaSamples;
-            msaaColorCI.debugName = "msaa_color";
+            GpuImageCreateInfo msaaCI{};
+            msaaCI.device = &device;
+            msaaCI.format = swap.colorFormat();
+            msaaCI.width = ext.width;
+            msaaCI.height = ext.height;
+            msaaCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+            msaaCI.samples = msaaSamples;
+            msaaCI.debugName = "msaa_color";
+            msaaColorImage = GpuImage(msaaCI);
 
-            msaaColorImage = GpuImage(msaaColorCI);
-
-            ImageViewCreateInfo msaaColorViewCI{};
-            msaaColorViewCI.device = &device;
-            msaaColorViewCI.image = msaaColorImage.handle();
-            msaaColorViewCI.format = swap.colorFormat();
-            msaaColorViewCI.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-            msaaColorViewCI.debugName = "msaa_color_view";
-
-            msaaColorView.create(msaaColorViewCI);
+            ImageViewCreateInfo viewCI{};
+            viewCI.device = &device;
+            viewCI.image = msaaColorImage.handle();
+            viewCI.format = swap.colorFormat();
+            viewCI.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+            msaaColorView.create(viewCI);
         }
 
-        // Create depth buffer with MSAA samples
         GpuImageCreateInfo depthCI{};
         depthCI.device = &device;
         depthCI.format = VK_FORMAT_D32_SFLOAT;
@@ -262,7 +221,6 @@ int main() {
         depthCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         depthCI.samples = msaaSamples;
         depthCI.debugName = "depth";
-
         GpuImage depthImage(depthCI);
 
         ImageViewCreateInfo depthViewCI{};
@@ -271,12 +229,10 @@ int main() {
         depthViewCI.format = VK_FORMAT_D32_SFLOAT;
         depthViewCI.aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
         depthViewCI.range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        depthViewCI.debugName = "depth_view";
-
         ImageView depthView;
         depthView.create(depthViewCI);
 
-        // 11) Load shaders and create pipeline ------------------------------------
+        // 11) Load shaders and create pipeline
         auto vs_model = loadSpirv(PROJECT_ROOT "/shaders/model.vert.spv");
         auto fs_model = loadSpirv(PROJECT_ROOT "/shaders/model.frag.spv");
 
@@ -295,34 +251,25 @@ int main() {
             fs.stage = VK_SHADER_STAGE_FRAGMENT_BIT; fs.module = mod; fs.entry = "main";
         }
 
-        // Pipeline layout: Set 0 (global) + Set 1 (material) + Push constants
         PipelineLayoutDesc pipeLayoutDesc{};
         pipeLayoutDesc.setLayouts.push_back(globalLayout.handle());
         pipeLayoutDesc.setLayouts.push_back(materialLayout.handle());
-
-        // Push constants: mat4 model + mat4 normalMatrix + MaterialParams = 208 bytes
-        // Layout: [model: 64] [normalMatrix: 64] [MaterialParams: 80] = 208 bytes total
         VkPushConstantRange pushRange{};
         pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         pushRange.offset = 0;
-        pushRange.size = 208; // 2 x mat4 (128) + MaterialParams (80)
+        pushRange.size = 208;
         pipeLayoutDesc.pushConstants.push_back(pushRange);
+        VkPipelineLayout gridPipelineLayout = layoutCache.get(pipeLayoutDesc);
 
-        VkPipelineLayout modelPipelineLayout = layoutCache.get(pipeLayoutDesc);
-
-        // Vertex input (matches hvk::Vertex)
         VertexInputDesc vi{};
         vi.bindings.push_back(Vertex::getBindingDescription());
         vi.attributes = Vertex::getAttributeDescriptions();
 
-        // Color blend (1 attachment, alpha blending enabled for transparent materials)
         ColorBlendState cbs{};
         cbs.attachments.resize(1);
         cbs.attachments[0].blendEnable = VK_TRUE;
-        cbs.attachments[0].colorWriteMask =
-            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
-        // Standard alpha blending: srcAlpha * srcColor + (1 - srcAlpha) * dstColor
+        cbs.attachments[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                             VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         cbs.attachments[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
         cbs.attachments[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
         cbs.attachments[0].colorBlendOp = VK_BLEND_OP_ADD;
@@ -330,30 +277,23 @@ int main() {
         cbs.attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
         cbs.attachments[0].alphaBlendOp = VK_BLEND_OP_ADD;
 
-        // Depth test enabled
         DepthStencilState dss{};
         dss.depthTestEnable = VK_TRUE;
         dss.depthWriteEnable = VK_TRUE;
         dss.depthCompare = VK_COMPARE_OP_LESS;
 
-        // Raster state
         RasterState rs{};
-        // Disable culling to avoid winding issues across assets
         rs.cullMode = VK_CULL_MODE_NONE;
-        // With Vulkan-style projection (Y flipped), front faces appear clockwise.
-        // Use CLOCKWISE to avoid backface culling of visible geometry.
         rs.frontFace = VK_FRONT_FACE_CLOCKWISE;
-        // Set MSAA sample count
         rs.rasterSamples = msaaSamples;
+        rs.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;  // Use LINE_LIST for grid lines
 
-        // Render formats
         RenderFormats fmts{};
         fmts.colorFormats = { swap.colorFormat() };
         fmts.depthFormat = VK_FORMAT_D32_SFLOAT;
 
-        // Create graphics pipeline
         GraphicsPipelineDesc gp{};
-        gp.layout = modelPipelineLayout;
+        gp.layout = gridPipelineLayout;
         gp.stages = { vs, fs };
         gp.vertexInput = vi;
         gp.raster = rs;
@@ -361,22 +301,20 @@ int main() {
         gp.colorBlend = cbs;
         gp.formats = fmts;
         gp.dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+        VkPipeline gridPipeline = pipeCache.get(gp);
 
-        VkPipeline modelPipeline = pipeCache.get(gp);
-
-        // Destroy shader modules
         vkDestroyShaderModule(device.device(), vs.module, nullptr);
         vkDestroyShaderModule(device.device(), fs.module, nullptr);
 
         std::cout << "[11/12] Initializing ImGui..." << std::endl;
 
-        // 12) ImGui initialization -------------------------------------------------
+        // 12) ImGui initialization
         ImGuiLayerCreateInfo imguiCI{};
         imguiCI.device = &device;
         imguiCI.window = window.glfwHandle();
         imguiCI.framesInFlight = sync.frameCount();
         imguiCI.colorFormat = swap.colorFormat();
-        imguiCI.depthFormat = VK_FORMAT_D32_SFLOAT;  // Match the depth buffer format
+        imguiCI.depthFormat = VK_FORMAT_D32_SFLOAT;
         imguiCI.msaaSamples = msaaSamples;
         imguiCI.enableDocking = true;
 
@@ -384,82 +322,24 @@ int main() {
 
         std::cout << "[12/12] Starting main loop...\n" << std::endl;
 
-        // 13) Main loop ------------------------------------------------------------
+        // 13) Main loop
         uint64_t frameNumber = 0;
         bool needDepthRecreate = false;
 
         while (!window.shouldClose()) {
             window.poll();
-
-            // Update core systems
             Input::update();
             Time::update();
 
             // Begin ImGui frame
             imgui.newFrame();
 
-            // Toggle cursor lock with ESC
             if (Input::wasKeyJustPressed(GLFW_KEY_ESCAPE)) {
-                if (Input::isCursorDisabled()) {
-                    Input::setCursorMode(GLFW_CURSOR_NORMAL);
-                } else {
-                    Input::setCursorMode(GLFW_CURSOR_DISABLED);
-                }
+                if (Input::isCursorDisabled()) Input::setCursorMode(GLFW_CURSOR_NORMAL);
+                else Input::setCursorMode(GLFW_CURSOR_DISABLED);
             }
 
-            // Update camera
             cameraController.update(camera);
-
-            // ImGui debug windows
-            {
-                // Performance window
-                ImGui::Begin("Performance", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-                ImGui::Text("FPS: %.1f", Time::fps());
-                ImGui::Text("Frame Time: %.3f ms", Time::averageFrameTime());
-                ImGui::Text("Delta Time: %.4f s", Time::deltaTime());
-                ImGui::Text("Frame Count: %llu", Time::frameCount());
-                ImGui::Text("Total Time: %.2f s", Time::totalTime());
-                ImGui::Separator();
-                ImGui::Text("Swapchain: %ux%u", swap.extent().width, swap.extent().height);
-                ImGui::Text("MSAA: %dx", msaaSamples);
-                ImGui::End();
-
-                // Camera info window
-                ImGui::Begin("Camera", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-                auto pos = camera.position();
-                ImGui::Text("Position: (%.2f, %.2f, %.2f)", pos.x, pos.y, pos.z);
-                auto rot = camera.eulerAngles();
-                ImGui::Text("Rotation: (%.1f, %.1f, %.1f)", rot.x, rot.y, rot.z);
-                ImGui::Text("FOV: %.1f", camera.fovY());
-                ImGui::Separator();
-                ImGui::Text("Controller Mode: FPS");
-                ImGui::Text("Move Speed: %.1f", cameraController.moveSpeed());
-                ImGui::Text("Mouse Sensitivity: %.2f", cameraController.mouseSensitivity());
-                ImGui::End();
-
-                // Scene info window
-                ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-                ImGui::Text("Model: %s", modelPath);
-                ImGui::Text("Textures: %u", model.textureCount());
-                ImGui::Text("Materials: %u", model.materialCount());
-                ImGui::Text("Meshes: %u", model.meshCount());
-                ImGui::Text("Nodes: %u", model.nodeCount());
-                ImGui::Separator();
-                ImGui::Text("Lights: %u", lightBuffer.lightCount);
-                ImGui::ColorEdit3("Ambient", &sceneData.ambientColor.x);
-                ImGui::End();
-
-                // Close button - only visible when cursor is enabled
-                if (!Input::isCursorDisabled()) {
-                    ImGui::Begin("Application", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse);
-                    ImGui::Text("Press ESC to toggle cursor lock");
-                    ImGui::Separator();
-                    if (ImGui::Button("Close Application", ImVec2(200, 30))) {
-                        window.setShouldClose(true);
-                    }
-                    ImGui::End();
-                }
-            }
 
             // Handle window resize
             if (window.wasResized()) {
@@ -483,25 +363,22 @@ int main() {
                     msaaColorImage = GpuImage();
                     msaaColorView = ImageView();
 
-                    GpuImageCreateInfo newMsaaColorCI{};
-                    newMsaaColorCI.device = &device;
-                    newMsaaColorCI.format = swap.colorFormat();
-                    newMsaaColorCI.width = ext.width;
-                    newMsaaColorCI.height = ext.height;
-                    newMsaaColorCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-                    newMsaaColorCI.samples = msaaSamples;
-                    newMsaaColorCI.debugName = "msaa_color";
+                    GpuImageCreateInfo newMsaaCI{};
+                    newMsaaCI.device = &device;
+                    newMsaaCI.format = swap.colorFormat();
+                    newMsaaCI.width = ext.width;
+                    newMsaaCI.height = ext.height;
+                    newMsaaCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+                    newMsaaCI.samples = msaaSamples;
+                    newMsaaCI.debugName = "msaa_color";
+                    msaaColorImage = GpuImage(newMsaaCI);
 
-                    msaaColorImage = GpuImage(newMsaaColorCI);
-
-                    ImageViewCreateInfo newMsaaColorViewCI{};
-                    newMsaaColorViewCI.device = &device;
-                    newMsaaColorViewCI.image = msaaColorImage.handle();
-                    newMsaaColorViewCI.format = swap.colorFormat();
-                    newMsaaColorViewCI.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
-                    newMsaaColorViewCI.debugName = "msaa_color_view";
-
-                    msaaColorView.create(newMsaaColorViewCI);
+                    ImageViewCreateInfo newViewCI{};
+                    newViewCI.device = &device;
+                    newViewCI.image = msaaColorImage.handle();
+                    newViewCI.format = swap.colorFormat();
+                    newViewCI.aspect = VK_IMAGE_ASPECT_COLOR_BIT;
+                    msaaColorView.create(newViewCI);
                 }
 
                 // Recreate depth buffer
@@ -516,7 +393,6 @@ int main() {
                 newDepthCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
                 newDepthCI.samples = msaaSamples;
                 newDepthCI.debugName = "depth";
-
                 depthImage = GpuImage(newDepthCI);
 
                 ImageViewCreateInfo newDepthViewCI{};
@@ -525,55 +401,86 @@ int main() {
                 newDepthViewCI.format = VK_FORMAT_D32_SFLOAT;
                 newDepthViewCI.aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
                 newDepthViewCI.range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                newDepthViewCI.debugName = "depth_view";
-
                 depthView.create(newDepthViewCI);
+
                 needDepthRecreate = false;
 
                 // Notify ImGui of resize
                 imgui.onResize(ext.width, ext.height);
             }
 
-            // Begin frame
+            // ImGui debug windows
+            {
+                // Performance window
+                ImGui::Begin("Performance", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+                ImGui::Text("FPS: %.1f", Time::fps());
+                ImGui::Text("Frame Time: %.3f ms", Time::averageFrameTime());
+                ImGui::Text("Delta Time: %.4f s", Time::deltaTime());
+                ImGui::Separator();
+                ImGui::Text("Swapchain: %ux%u", swap.extent().width, swap.extent().height);
+                ImGui::Text("MSAA: %dx", msaaSamples);
+                ImGui::End();
+
+                // Camera info window
+                ImGui::Begin("Camera", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+                auto pos = camera.position();
+                ImGui::Text("Position: (%.2f, %.2f, %.2f)", pos.x, pos.y, pos.z);
+                auto rot = camera.eulerAngles();
+                ImGui::Text("Rotation: (%.1f, %.1f, %.1f)", rot.x, rot.y, rot.z);
+                ImGui::Text("FOV: %.1f", camera.fovY());
+                ImGui::Separator();
+                ImGui::Text("Move Speed: %.1f m/s", cameraController.moveSpeed());
+                ImGui::End();
+
+                // Grid info window
+                ImGui::Begin("Grid", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+                ImGui::Text("Demo: Infinite Grid");
+                ImGui::Text("Size: 50m x 50m");
+                ImGui::Text("Spacing: 1m");
+                ImGui::Text("Lines: %zu", indices.size() / 2);
+                ImGui::Text("Vertices: %zu", verts.size());
+                ImGui::Separator();
+                ImGui::ColorEdit3("Ambient", &sceneData.ambientColor.x);
+                ImGui::End();
+
+                // Close button - only visible when cursor is enabled
+                if (!Input::isCursorDisabled()) {
+                    ImGui::Begin("Application", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse);
+                    ImGui::Text("Press ESC to toggle cursor lock");
+                    ImGui::Separator();
+                    if (ImGui::Button("Close Application", ImVec2(200, 30))) {
+                        window.setShouldClose(true);
+                    }
+                    ImGui::End();
+                }
+            }
+
             if (sync.beginFrame() != VK_SUCCESS) continue;
 
             uint32_t imageIndex = 0;
             VkResult acq = sync.acquireNextImage(swap.handle(), imageIndex);
             if (acq == VK_ERROR_OUT_OF_DATE_KHR) {
                 sync.endFrame();
-                if (swap.recreateForWindow(window)) {
-                    camera.updateAspectRatio(
-                        window.framebufferSize().width,
-                        window.framebufferSize().height
-                    );
-                }
                 continue;
             }
 
             uint32_t frameIndex = sync.currentFrameIndex();
 
-            // Update scene data
             sceneData.time = Time::totalTime();
             sceneData.deltaTime = Time::deltaTime();
             sceneData.frameCount = static_cast<uint32_t>(Time::frameCount());
 
-            // Update global descriptors
             globalDescriptors.updateScene(frameIndex, sceneData);
             globalDescriptors.updateCamera(frameIndex, camera.toCameraData(
-                window.framebufferSize().width,
-                window.framebufferSize().height
-            ));
+                window.framebufferSize().width, window.framebufferSize().height));
             globalDescriptors.updateLights(frameIndex, lightBuffer);
 
-            // Record commands
             CmdList cmd(sync.cmd());
 
-            // Transition images
             hvk::barrier::Batch b;
             ext = swap.extent();
 
             if (msaaSamples != VK_SAMPLE_COUNT_1_BIT) {
-                // MSAA path: transition MSAA color to attachment, swap to resolve
                 b.imgs.push_back(hvk::barrier::make_image_barrier_full(
                     msaaColorImage.handle(), swap.colorFormat(),
                     hvk::barrier::ImgUse::Undefined, hvk::barrier::ImgUse::ColorAttachment));
@@ -581,39 +488,33 @@ int main() {
                     swap.image(imageIndex), swap.colorFormat(),
                     hvk::barrier::ImgUse::Undefined, hvk::barrier::ImgUse::ColorAttachment));
             } else {
-                // Non-MSAA path: transition swap image to attachment
                 b.imgs.push_back(hvk::barrier::make_image_barrier_full(
                     swap.image(imageIndex), swap.colorFormat(),
                     hvk::barrier::ImgUse::Undefined, hvk::barrier::ImgUse::ColorAttachment));
             }
 
-            // Transition depth image to depth attachment
             b.imgs.push_back(hvk::barrier::make_image_barrier_full(
                 depthImage.handle(), VK_FORMAT_D32_SFLOAT,
                 hvk::barrier::ImgUse::Undefined, hvk::barrier::ImgUse::DepthStencilAttachment));
             hvk::barrier::submit(cmd.handle(), b);
             b.clear();
 
-            // Setup color attachment (MSAA if enabled, otherwise direct to swap)
             ColorAttachment colorAtt{};
             if (msaaSamples != VK_SAMPLE_COUNT_1_BIT) {
-                // Render to MSAA buffer
                 colorAtt.view = msaaColorView.handle();
                 colorAtt.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
                 colorAtt.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                 colorAtt.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                colorAtt.clear = VkClearColorValue{ {0.1f, 0.1f, 0.15f, 1.0f} };
-                // Resolve to swapchain
+                colorAtt.clear = VkClearColorValue{ {0.05f, 0.05f, 0.08f, 1.0f} };  // Dark background
                 colorAtt.resolveView = swap.imageView(imageIndex);
                 colorAtt.resolveLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
                 colorAtt.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
             } else {
-                // Render directly to swapchain
                 colorAtt.view = swap.imageView(imageIndex);
                 colorAtt.layout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
                 colorAtt.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
                 colorAtt.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                colorAtt.clear = VkClearColorValue{ {0.1f, 0.1f, 0.15f, 1.0f} };
+                colorAtt.clear = VkClearColorValue{ {0.05f, 0.05f, 0.08f, 1.0f} };
             }
 
             DepthAttachment depthAtt{};
@@ -625,32 +526,24 @@ int main() {
 
             VkRect2D renderArea{ {0, 0}, {ext.width, ext.height} };
             cmd.beginRendering(renderArea, {colorAtt}, &depthAtt, 0);
-            // We already flip Y in the projection matrix; use a regular (non-flipped) viewport.
             cmd.setViewportScissor(ext, false);
 
-            // Bind pipeline and global descriptors
-            cmd.bindGraphicsPipeline(modelPipeline);
+            cmd.bindGraphicsPipeline(gridPipeline);
             VkDescriptorSet globalSet = globalDescriptors.get(frameIndex);
-            vkCmdBindDescriptorSets(
-                cmd.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                modelPipelineLayout, 0, 1, &globalSet, 0, nullptr
-            );
+            vkCmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    gridPipelineLayout, 0, 1, &globalSet, 0, nullptr);
 
-            // Render model
             glm::mat4 modelTransform = glm::mat4(1.0f);
-            model.draw(cmd, modelPipelineLayout, globalSet, modelTransform);
+            gridModel.draw(cmd, gridPipelineLayout, globalSet, modelTransform);
 
             // Render ImGui
             imgui.render(cmd);
 
             cmd.endRendering();
 
-            // Transition to present
-            b.imgs.push_back(hvk::barrier::color_to_present(
-                swap.image(imageIndex), swap.colorFormat()));
+            b.imgs.push_back(hvk::barrier::color_to_present(swap.image(imageIndex), swap.colorFormat()));
             hvk::barrier::submit(cmd.handle(), b);
 
-            // Submit and present
             VkResult pr = sync.submitAndPresent(swap.handle(), imageIndex);
             if (pr == VK_ERROR_OUT_OF_DATE_KHR || pr == VK_SUBOPTIMAL_KHR) {
                 // Will recreate next loop
@@ -660,11 +553,9 @@ int main() {
             frameNumber++;
         }
 
-        // Cleanup
         std::cout << "\nShutting down..." << std::endl;
         device.waitIdle();
         Input::cleanup();
-
         std::cout << "Done!" << std::endl;
         return 0;
 

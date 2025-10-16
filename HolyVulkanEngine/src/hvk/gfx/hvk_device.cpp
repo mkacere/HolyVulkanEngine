@@ -26,6 +26,15 @@ namespace hvk {
         const VkDebugUtilsMessengerCallbackDataEXT* data,
         void*)
     {
+        // Filter out harmless AMD switchable graphics layer warning about API version mismatch
+        if (data->pMessage) {
+            std::string msg(data->pMessage);
+            if (msg.find("VK_LAYER_AMD_switchable_graphics") != std::string::npos &&
+                msg.find("uses API version") != std::string::npos) {
+                return VK_FALSE;  // Silently ignore this warning
+            }
+        }
+
         std::cerr << "[VK] "
             << ((sev & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) ? "ERROR " :
                 (sev & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ? "WARN  " :
@@ -222,7 +231,7 @@ namespace hvk {
     void Device::setDebugVerbosity(DebugVerbosity v) {
         dbgVerbosity_ = v;
 #ifndef NDEBUG
-        // If validation isn’t enabled or extension missing, this was a no-op earlier anyway.
+        // If validation isnï¿½t enabled or extension missing, this was a no-op earlier anyway.
         // Recreate messenger to apply new severities.
         destroyDebugMessenger();
         setupDebugMessenger();

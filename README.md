@@ -19,6 +19,7 @@ Holy Vulkan Engine (HVK) is a Vulkan-based 3D rendering engine that provides a s
 - **Descriptor Management**: Simplified descriptor set creation and binding
 
 ![HVK Miku Demo](.images/miku_demo.png)
+![HVK Grid Imgui Demo](.images/grid_demo.png)
 
 ## Prerequisites
 

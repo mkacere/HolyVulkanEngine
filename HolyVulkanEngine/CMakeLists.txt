@@ -19,6 +19,8 @@ target_include_directories(HVKEngine
         ${CMAKE_CURRENT_LIST_DIR}/external/tinygltf
         ${CMAKE_CURRENT_LIST_DIR}/external/glfw/include
         ${CMAKE_CURRENT_LIST_DIR}/external/VulkanMemoryAllocator/include
+        ${CMAKE_CURRENT_LIST_DIR}/external/imgui
+        ${CMAKE_CURRENT_LIST_DIR}/external/imgui/backends
     PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/src
 )
@@ -48,9 +50,22 @@ else()
     message(FATAL_ERROR "GLFW not found. Install glfw3 or add external/glfw.")
 endif()
 
+# ImGui source files
+set(IMGUI_DIR ${CMAKE_CURRENT_LIST_DIR}/external/imgui)
+target_sources(HVKEngine PRIVATE
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_demo.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
+)
+
 # Submodules (each has a CMakeLists.txt that GLOB_RECURSEs *.cpp and calls target_sources)
 add_subdirectory(src/hvk/core)
 add_subdirectory(src/hvk/gfx)
 add_subdirectory(src/hvk/resources)
 add_subdirectory(src/hvk/scene)
 add_subdirectory(src/hvk/systems)
+add_subdirectory(src/hvk/ui)

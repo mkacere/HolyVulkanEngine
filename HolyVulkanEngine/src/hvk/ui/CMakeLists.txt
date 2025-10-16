@@ -1,0 +1,8 @@
+# HolyVulkanEngine/src/hvk/ui
+file(GLOB_RECURSE HVK_UI_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_LIST_DIR}/*.cpp
+)
+
+target_sources(HVKEngine PRIVATE ${HVK_UI_SOURCES})
+
+source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${HVK_UI_SOURCES})

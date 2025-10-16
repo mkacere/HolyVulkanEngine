@@ -2,6 +2,7 @@
 #include <hvk/resources.hpp>
 #include <hvk/scene.hpp>
 #include <hvk/core.hpp>
+#include <hvk/ui.hpp>
 
 #include <fstream>
 #include <vector>
@@ -34,7 +35,7 @@ int main() {
             .width = 1280,
             .height = 720,
             .title = "HVK - Primitives Demo",
-            .mode = WindowMode::Auto
+            .mode = WindowMode::Windowed
         });
         Device device(window, { .debugVerbosity = DebugVerbosity::Warn });
 
@@ -341,14 +342,31 @@ int main() {
         vkDestroyShaderModule(device.device(), vs.module, nullptr);
         vkDestroyShaderModule(device.device(), fs.module, nullptr);
 
-        std::cout << "[11/11] Starting main loop...\n" << std::endl;
+        std::cout << "[11/12] Initializing ImGui..." << std::endl;
 
-        // 12) Main loop
+        // 12) ImGui initialization -------------------------------------------------
+        ImGuiLayerCreateInfo imguiCI{};
+        imguiCI.device = &device;
+        imguiCI.window = window.glfwHandle();
+        imguiCI.framesInFlight = sync.frameCount();
+        imguiCI.colorFormat = swap.colorFormat();
+        imguiCI.depthFormat = VK_FORMAT_D32_SFLOAT;  // Match the depth buffer format
+        imguiCI.msaaSamples = msaaSamples;
+        imguiCI.enableDocking = true;
+
+        ImGuiLayer imgui(imguiCI);
+
+        std::cout << "[12/12] Starting main loop...\n" << std::endl;
+
+        // 13) Main loop
         uint64_t frameNumber = 0;
         while (!window.shouldClose()) {
             window.poll();
             Input::update();
             Time::update();
+
+            // Begin ImGui frame
+            imgui.newFrame();
 
             if (Input::wasKeyJustPressed(GLFW_KEY_ESCAPE)) {
                 if (Input::isCursorDisabled()) Input::setCursorMode(GLFW_CURSOR_NORMAL);
@@ -356,6 +374,56 @@ int main() {
             }
 
             cameraController.update(camera);
+
+            // ImGui debug windows
+            {
+                // Performance window
+                ImGui::Begin("Performance", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+                ImGui::Text("FPS: %.1f", Time::fps());
+                ImGui::Text("Frame Time: %.3f ms", Time::averageFrameTime());
+                ImGui::Text("Delta Time: %.4f s", Time::deltaTime());
+                ImGui::Text("Frame Count: %llu", Time::frameCount());
+                ImGui::Text("Total Time: %.2f s", Time::totalTime());
+                ImGui::Separator();
+                ImGui::Text("Swapchain: %ux%u", swap.extent().width, swap.extent().height);
+                ImGui::Text("MSAA: %dx", msaaSamples);
+                ImGui::End();
+
+                // Camera info window
+                ImGui::Begin("Camera", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+                auto pos = camera.position();
+                ImGui::Text("Position: (%.2f, %.2f, %.2f)", pos.x, pos.y, pos.z);
+                auto rot = camera.eulerAngles();
+                ImGui::Text("Rotation: (%.1f, %.1f, %.1f)", rot.x, rot.y, rot.z);
+                ImGui::Text("FOV: %.1f", camera.fovY());
+                ImGui::Separator();
+                ImGui::Text("Controller Mode: FPS");
+                ImGui::Text("Move Speed: %.1f", cameraController.moveSpeed());
+                ImGui::Text("Mouse Sensitivity: %.2f", cameraController.mouseSensitivity());
+                ImGui::End();
+
+                // Scene info window
+                ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+                ImGui::Text("Demo: Primitive Shapes");
+                ImGui::Text("Meshes: %u", primitivesModel.meshCount());
+                ImGui::Text("Materials: %u", primitivesModel.materialCount());
+                ImGui::Text("Nodes: %u", primitivesModel.nodeCount());
+                ImGui::Separator();
+                ImGui::Text("Lights: %u", lightBuffer.lightCount);
+                ImGui::ColorEdit3("Ambient", &sceneData.ambientColor.x);
+                ImGui::End();
+
+                // Close button - only visible when cursor is enabled
+                if (!Input::isCursorDisabled()) {
+                    ImGui::Begin("Application", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse);
+                    ImGui::Text("Press ESC to toggle cursor lock");
+                    ImGui::Separator();
+                    if (ImGui::Button("Close Application", ImVec2(200, 30))) {
+                        window.setShouldClose(true);
+                    }
+                    ImGui::End();
+                }
+            }
 
             if (sync.beginFrame() != VK_SUCCESS) continue;
 
@@ -438,6 +506,9 @@ int main() {
             glm::mat4 modelTransform = glm::mat4(1.0f);
             primitivesModel.draw(cmd, modelPipelineLayout, globalSet, modelTransform);
 
+            // Render ImGui
+            imgui.render(cmd);
+
             cmd.endRendering();
 
             b.imgs.push_back(hvk::barrier::color_to_present(swap.image(imageIndex), swap.colorFormat()));
@@ -450,13 +521,6 @@ int main() {
 
             sync.endFrame();
             frameNumber++;
-
-            if (frameNumber % 60 == 0) {
-                std::cout << "FPS: " << Time::fps() << " | Cam: ("
-                          << camera.position().x << ", "
-                          << camera.position().y << ", "
-                          << camera.position().z << ")" << std::endl;
-            }
         }
 
         std::cout << "\nShutting down..." << std::endl;

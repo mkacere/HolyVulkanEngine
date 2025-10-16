@@ -587,6 +587,90 @@ public:
 
         return {vertices, indices};
     }
+
+    /**
+     * Create a grid on the XZ plane (Y-up)
+     *
+     * Creates a grid of lines with 1-meter spacing centered at origin
+     * Uses LINE_LIST topology (indices are pairs of line endpoints)
+     *
+     * @param size Grid extends from -size to +size in both X and Z directions
+     * @param spacing Distance between grid lines (in meters)
+     * @param color Color for all grid lines
+     */
+    static std::pair<std::vector<Vertex>, std::vector<uint32_t>> createGrid(
+        float size = 50.0f,
+        float spacing = 1.0f,
+        const glm::vec4& color = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f)
+    ) {
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
+
+        glm::vec3 normal(0.0f, 1.0f, 0.0f);
+        glm::vec4 tangent(1.0f, 0.0f, 0.0f, 1.0f);
+
+        uint32_t lineCount = static_cast<uint32_t>(size / spacing);
+
+        // Lines parallel to X-axis (running along X, at various Z positions)
+        for (uint32_t i = 0; i <= lineCount * 2; ++i) {
+            float z = -size + (static_cast<float>(i) * spacing);
+
+            // Start point
+            Vertex v0;
+            v0.position = glm::vec3(-size, 0.0f, z);
+            v0.normal = normal;
+            v0.color = color;
+            v0.uv = glm::vec2(0.0f, 0.0f);
+            v0.tangent = tangent;
+
+            // End point
+            Vertex v1;
+            v1.position = glm::vec3(size, 0.0f, z);
+            v1.normal = normal;
+            v1.color = color;
+            v1.uv = glm::vec2(1.0f, 0.0f);
+            v1.tangent = tangent;
+
+            uint32_t baseIdx = static_cast<uint32_t>(vertices.size());
+            vertices.push_back(v0);
+            vertices.push_back(v1);
+
+            // Line indices (for LINE_LIST topology)
+            indices.push_back(baseIdx);
+            indices.push_back(baseIdx + 1);
+        }
+
+        // Lines parallel to Z-axis (running along Z, at various X positions)
+        for (uint32_t i = 0; i <= lineCount * 2; ++i) {
+            float x = -size + (static_cast<float>(i) * spacing);
+
+            // Start point
+            Vertex v0;
+            v0.position = glm::vec3(x, 0.0f, -size);
+            v0.normal = normal;
+            v0.color = color;
+            v0.uv = glm::vec2(0.0f, 0.0f);
+            v0.tangent = tangent;
+
+            // End point
+            Vertex v1;
+            v1.position = glm::vec3(x, 0.0f, size);
+            v1.normal = normal;
+            v1.color = color;
+            v1.uv = glm::vec2(0.0f, 1.0f);
+            v1.tangent = tangent;
+
+            uint32_t baseIdx = static_cast<uint32_t>(vertices.size());
+            vertices.push_back(v0);
+            vertices.push_back(v1);
+
+            // Line indices (for LINE_LIST topology)
+            indices.push_back(baseIdx);
+            indices.push_back(baseIdx + 1);
+        }
+
+        return {vertices, indices};
+    }
 };
 
 } // namespace hvk
