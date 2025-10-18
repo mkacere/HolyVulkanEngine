@@ -4,308 +4,244 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Holy Vulkan Engine (HVK) is a Vulkan 1.4-based 3D rendering engine that provides a modern C++20 abstraction layer over Vulkan. The engine is currently undergoing a major architectural refactor toward a more extensible, cache-oriented design with dynamic rendering, improved resource management, and better separation of concerns.
+Holy Vulkan Engine (HVK) is a Vulkan-based 3D rendering engine written in modern C++20. It provides a simplified abstraction layer over Vulkan for graphics programming, featuring GLTF model loading, pluggable render systems, and a modular architecture.
 
-## Build Commands
+## Build System
 
-### Initial Setup
+### Prerequisites
+- C++20 compatible compiler (MSVC 2019+, GCC 10+, or Clang 10+)
+- Vulkan SDK with `glslangValidator` in PATH
+- CMake 3.16+
+- Git for submodule management
+
+### Common Build Commands
+
 ```bash
-# Clone with submodules
-git submodule update --init --recursive
-```
+# Configure for debug (first time or after CMakeLists.txt changes)
+cmake --preset debug
 
-### Configuration
-```bash
-# Configure using CMake presets
-cmake --preset debug          # Debug build
-cmake --preset release        # Release build
-```
+# Configure for release
+cmake --preset release
 
-### Building
-```bash
-# Build debug (using CMake build preset)
-cmake --build --preset build-debug
-# Or directly:
+# Build debug
 cmake --build build/debug --config Debug
 
-# Build release (using CMake build preset)
-cmake --build --preset build-release
-# Or directly:
+# Build release
 cmake --build build/release --config Release
 ```
 
-### Running
-```bash
-# Run debug build
-./build/debug/bin/HVKApp.exe
+### Running Demos
 
-# Run release build
-./build/release/bin/HVKApp.exe
+Three demo executables are built in `build/<preset>/bin/`:
+
+```bash
+# Main GLTF model demo (loads models from assets/)
+./build/debug/bin/Debug/HVKApp.exe
+
+# Primitive shapes demo (cubes, spheres, etc.)
+./build/debug/bin/Debug/PrimitivesDemo.exe
+
+# Infinite grid visualization demo
+./build/debug/bin/Debug/GridDemo.exe
 ```
 
 ### Shader Compilation
-Shaders are automatically compiled from GLSL to SPIR-V during the CMake build process. Place `.vert` and `.frag` files in the `shaders/` directory, and `glslangValidator` will compile them to `.spv` files. The build system will fail if `glslangValidator` is not found in PATH (requires Vulkan SDK).
+
+Shaders are automatically compiled from GLSL to SPIR-V during CMake build:
+- Place `.vert` and `.frag` files in `shaders/` directory
+- CMake invokes `glslangValidator -V` to produce `.spv` files
+- Load compiled shaders using the `.spv` file path in code
+- Shader compilation is a build dependency of all executables
 
 ## Architecture
 
-### Current Refactoring State
-The codebase is in transition from an old render pass-based architecture to a modern dynamic rendering architecture. Many files have `.old` suffixes (e.g., `hvk_renderer.h.old`, `hvk_camera.h.old`, `hvk_model.h.old`), and some headers in `hvk/gfx.hpp` are commented out (e.g., `hvk_renderer.h`, `hvk_buffer.h`).
-
-**Working example:** `app/main.cpp` demonstrates the new architecture with a complete GLTF model rendering demo featuring PBR materials, lighting, MSAA, depth testing, and camera controls.
-
-The new architecture focuses on:
-- **Dynamic rendering** (Vulkan 1.3+) instead of render passes
-- **Cache-based pipelines** with `PipelineLayoutCache` and `GraphicsPipelineCache`
-- **Explicit synchronization** via `FrameSync` with timeline semaphores
-- **Command list abstraction** via `CmdList` wrapper
-- **RenderGraph** for declarative multi-pass rendering (optional, alternative to manual command recording)
-- **Deferred deletion** for safe Vulkan resource cleanup
-- **GPU profiler** integration for performance measurement
-- **Staging uploader** for efficient CPU→GPU transfers
-
 ### Module Structure
 
-**HolyVulkanEngine/** - Engine library (static library target: `HVKEngine`)
-- `include/hvk/core/` - Core systems (Input, Time)
-- `include/hvk/gfx/` - Graphics subsystem (Vulkan abstraction)
-- `include/hvk/scene/` - Scene management (Camera, CameraController)
-- `include/hvk/resources/` - Resource loading (Texture, Material, Mesh, Model, GLTF loader)
-- `include/hvk/systems/` - Pluggable render systems (legacy)
+The engine is organized into these subsystems under `HolyVulkanEngine/`:
 
-**app/** - Application executable (target: `HVKApp`)
-- `main.cpp` - Entry point demonstrating engine usage
+#### `hvk/core/` - Core Systems
+- **Input**: Centralized input handling (keyboard, mouse) via GLFW
+- **Time**: Frame timing, delta time, FPS tracking
 
-**shaders/** - GLSL shader sources
-- Automatically compiled to SPIR-V during build
+#### `hvk/gfx/` - Graphics & Rendering
+Core Vulkan abstraction:
+- **Device**: Vulkan instance, physical device, logical device, queue management
+- **Window**: GLFW window wrapper with Vulkan surface creation
+- **Swapchain**: Swapchain, image views, automatic recreation on resize
+- **FrameSync**: Frame-in-flight synchronization using semaphores/fences (supports timeline semaphores)
+- **CmdList**: Command buffer wrapper with convenience methods
 
-### Key Graphics Classes
+Resource management:
+- **GpuResources**: Unified GPU buffer and image management using VMA (Vulkan Memory Allocator)
+- **StagingUploader**: Efficient CPU→GPU data transfer with per-frame staging buffers
+- **DeferredDeletion**: Safe deferred destruction of Vulkan resources after frames in flight
 
-#### Core Abstractions
-- **Device** (`hvk_device.h`): Vulkan 1.4 instance/device/queue/VMA allocator wrapper. Automatically enables dynamic rendering, synchronization2, buffer device address, timeline semaphores, and other modern features when supported.
-- **Window** (`hvk_window.h`): GLFW window wrapper with surface creation
-- **Swapchain** (`hvk_swapchain.h`): Swapchain wrapper with image/view management and automatic recreation
-- **FrameSync** (`hvk_frame_sync.h`): Frame synchronization with timeline semaphores, acquire/present logic, and command buffer management
+Descriptor & Pipeline management:
+- **DescriptorAllocator**: Pool-based descriptor set allocation
+- **DescriptorSetLayout**: Descriptor set layout creation
+- **PipelineLayoutCache**: Caches pipeline layouts to avoid duplicates
+- **GraphicsPipelineCache**: Caches graphics pipelines (uses dynamic rendering, not render passes)
+- **SamplerCache**: Caches texture samplers
+- **ShaderReflect**: SPIR-V reflection using SPIRV-Reflect to auto-generate descriptor layouts
 
-#### Core Systems
-- **Input** (`hvk_input.hpp`): GLFW-based input system for keyboard, mouse, and cursor control
-- **Time** (`hvk_time.hpp`): Frame timing, delta time, and FPS tracking
+Uniform data (tiered system):
+- **SceneData**: Per-frame scene globals (ambient color, fog, time, etc.)
+- **CameraData**: Per-frame camera matrices (view, projection, view-projection)
+- **LightData**: Per-frame light buffer (point, directional, spot lights)
+- **GlobalDescriptorLayout/GlobalDescriptorSet**: Set 0 binding (Scene + Camera + Lights)
+- **DynamicUniforms**: Dynamic uniform buffer offsets for per-object data
 
-#### Resource Management
-- **GpuBuffer** (`hvk_gpu_resources.h`): VMA-based buffer with automatic VkBuffer creation
-- **GpuImage** (`hvk_gpu_resources.h`): VMA-based image with VkImage/VkImageView
-- **StagingUploader** (`hvk_staging_uploader.h`): Ring-buffer staging for CPU→GPU transfers
-- **DeferredDeletion** (`hvk_deferred_deletion.hpp`): Safe destruction of Vulkan objects after GPU finishes
+Utilities:
+- **Barriers**: Image/buffer barrier helpers for layout transitions
+- **DebugUtils**: Vulkan debug labels and markers
+- **GpuProfiler**: GPU timestamp queries for performance profiling
 
-#### Pipelines and Caching
-- **PipelineLayoutCache** (`hvk_pipeline_layout_cache.h`): Deduplicates pipeline layouts based on descriptor set layouts and push constants
-- **GraphicsPipelineCache** (`hvk_graphics_pipeline_cache.h`): Deduplicates graphics pipelines based on `GraphicsPipelineDesc`
-- **SamplerCache** (`hvk_sampler_cache.h`): Deduplicates samplers
+#### `hvk/scene/` - Scene Management
+- **Camera**: Perspective/orthographic camera with projection matrices (Vulkan-style Y-flip)
+- **CameraController**: FPS-style camera controls (WASD movement, mouse look)
+- **Transform**: 3D transform hierarchy (position, rotation, scale)
 
-#### Command Recording
-- **CmdList** (`hvk_cmd_list.hpp`): Thin wrapper around `VkCommandBuffer` with helper methods for binding, drawing, and dynamic rendering
-- **Barriers** (`hvk_barriers.hpp`): Helper utilities for image/buffer barriers with common use cases
+#### `hvk/resources/` - Resource Loading
+- **Model**: GLTF 2.0 model representation (meshes, materials, textures, nodes)
+- **GltfLoader**: Loads GLTF/GLB files via tinygltf
+  - Supports PBR materials (base color, metallic-roughness, normal, emissive)
+  - Automatic mipmap generation
+  - Texture compression support
+- **Material**: PBR material data with descriptor set management
+- **Vertex**: Standard vertex format (position, normal, tangent, UV, color)
 
-#### Debugging and Profiling
-- **DebugUtils** (`hvk_debug_utils.h`): Vulkan debug marker integration
-- **GpuProfiler** (`hvk_gpu_profiler.h`): GPU timestamp query management for performance measurement
+#### `hvk/systems/` - Render Systems
+- **IRenderSystem**: Abstract interface for pluggable rendering systems
+  - `init(renderPass, extent)`: Initialize resources after swapchain creation
+  - `render(FrameInfo)`: Record draw commands
+  - `onResize(renderPass, extent)`: Handle swapchain recreation
+  - `cleanup()`: Destroy Vulkan resources
+- **ModelRenderSystem**: GLTF model rendering implementation (PBR shading)
 
-#### Frame Graph and High-Level Rendering
-- **RenderGraph** (`hvk_render_graph.h`): Declarative render graph for managing passes, resources, and automatic barrier insertion. Supports graphics and compute passes with transient/external image management. Part of the new architecture direction alongside manual `CmdList` usage.
+#### `hvk/ui/` - UI Layer
+- **ImGuiLayer**: Dear ImGui integration with Vulkan backend
+  - Multi-viewport support
+  - Docking support
+  - MSAA support
 
-#### Uniform Management and Data Structures
-- **DynamicUniforms** (`hvk_dynamic_uniforms.hpp`): Helper for managing per-frame dynamic uniform buffers
-- **SceneData** (`hvk_scene_data.hpp`): Scene-level data (ambient color, fog, time, etc.)
-- **CameraData** (`hvk_camera_data.hpp`): Camera matrices and parameters
-- **LightData** (`hvk_light_data.hpp`): Light structures (directional, point, spot)
-- **GlobalDescriptorSet** (`hvk_global_descriptors.hpp`): Helper for managing global descriptor sets (Scene + Camera + Lights)
+### Key Design Patterns
 
-#### Scene and Camera
-- **Camera** (`hvk_camera.hpp`): Perspective/orthographic camera with view/projection matrices
-- **CameraController** (`hvk_camera_controller.hpp`): FPS-style camera controls with WASD movement and mouse look
+#### Render System Pattern
+Rendering functionality is implemented as pluggable systems inheriting from `IRenderSystem`. Each system manages its own pipelines, descriptors, and draw logic. This allows mixing different rendering techniques (models, primitives, grids, etc.) in the same frame.
 
-#### Resource Loading
-- **Texture** (`hvk_texture.h`): Texture loading from files or memory with mipmap generation
-- **Material** (`hvk_material.h`): PBR material with albedo, normal, metallic-roughness textures and parameters
-- **Mesh** (`hvk_mesh.h`): Vertex/index buffer wrapper for renderable geometry
-- **Model** (`hvk_model.h`): Scene graph with nodes, meshes, materials, and hierarchical transforms
-- **GltfLoader** (`hvk_gltf_loader.h`): GLTF 2.0 loader using tinygltf
+#### Frame Context
+`FrameContext` (replacing older `FrameInfo`) provides lightweight frame-level data to render systems:
+- Frame index, timing, command buffer
+- Viewport/scissor/extent
+- Global descriptor set (Set 0: Scene + Camera + Lights)
+Render systems query ECS or other data sources directly rather than passing heavy data through the context.
 
-### Old vs. New Architecture
+#### Descriptor Set Binding Convention
+- **Set 0**: Global descriptors (Scene, Camera, Lights) - bound once per frame
+- **Set 1**: Material descriptors (textures, material params) - bound per material
+- **Push Constants**: Per-draw data (model matrix, normal matrix, material params)
 
-**Old (being phased out):**
-- `hvk_renderer.h.old`, `hvk_pipeline.h`, `hvk_swap_chain.h` (deleted/renamed)
-- Render pass-based rendering with `VkRenderPass` and `VkFramebuffer`
-- Manual synchronization with binary semaphores
-- `IRenderSystem` interface expecting `VkRenderPass` in `init()`
+#### Dynamic Rendering
+The engine uses Vulkan 1.3 dynamic rendering (VK_KHR_dynamic_rendering) instead of traditional render passes. Attachments are specified at `vkCmdBeginRendering` time.
 
-**New (current direction):**
-- Dynamic rendering (no render passes)
-- Cache-oriented design for pipelines/layouts/samplers
-- `FrameSync` for timeline semaphore-based synchronization
-- `CmdList` for simplified command recording
-- `StagingUploader` for efficient uploads
-- `RenderGraph` for declarative pass-based rendering (alternative to manual `CmdList` usage)
+#### MSAA Support
+MSAA is supported via multisampled color/depth attachments with resolve to swapchain. Sample count is queried from device limits at runtime.
 
-The `app/main.cpp` shows the new pattern: create `Device`, `Swapchain`, `FrameSync`, initialize core systems (`Input`, `Time`), create caches (samplers, layouts, pipelines), load GLTF models with materials, setup global descriptors (Scene/Camera/Lights), and use `CmdList` + dynamic rendering for the main loop.
+#### Vulkan Coordinate System
+- Projection matrices use Vulkan-style coordinates (Y-down, Z: 0 to 1)
+- Viewports are not flipped (negative height) - the projection matrix handles Y-flip
+- Front face winding is **clockwise** (due to Y-flip in projection)
 
-### Render System Pattern (Legacy)
+### Dependencies (External Libraries)
 
-The old architecture used pluggable render systems via the `IRenderSystem` interface (`hvk_irender_system.hpp`):
-- `init(VkRenderPass, VkExtent2D)` - Initialize resources
-- `render(FrameInfo&)` - Record draw commands
-- `onResize(VkRenderPass, VkExtent2D)` - Handle window resize
-- `cleanup()` - Destroy resources
+Located in `HolyVulkanEngine/external/`:
+- **GLFW**: Window/input management
+- **GLM**: Math library (vectors, matrices, quaternions)
+- **tinygltf**: GLTF 2.0 loader
+- **stb**: Image loading (stb_image.h)
+- **VulkanMemoryAllocator (VMA)**: GPU memory allocation
+- **SPIRV-Reflect**: SPIR-V shader reflection
+- **Dear ImGui**: Immediate mode GUI
 
-Systems like `ModelRenderSystem` implemented this interface. The new architecture is moving away from this pattern in favor of direct use of caches and command lists.
+## Common Development Workflows
 
-### Dependencies
+### Adding a New Render System
 
-**External libraries (in `HolyVulkanEngine/external/`):**
-- **Vulkan SDK** (via `find_package(Vulkan REQUIRED)`) - Must have `glslangValidator` in PATH
-- **GLFW** - Windowing (`external/glfw/`)
-- **GLM** - Math library (header-only, `external/glm/`)
-- **tinygltf** - GLTF 2.0 loader (header-only, `external/tinygltf/`)
-- **stb** - Image loading (header-only, `external/stb/`)
-- **VulkanMemoryAllocator (VMA)** - Memory management (header-only, `external/VulkanMemoryAllocator/`)
-- **SPIRV-Reflect** - SPIR-V reflection for descriptor layouts (header-only, `external/SPIRV-Reflect/`)
+1. Create a new header/source pair in `HolyVulkanEngine/src/hvk/systems/`
+2. Inherit from `IRenderSystem` and implement all virtual methods
+3. In `init()`: Create pipeline layout, graphics pipeline, allocate descriptors
+4. In `render(FrameContext&)`: Bind pipeline, descriptors, push constants, issue draw calls
+5. In `onResize()`: Recreate extent-dependent resources (if any)
+6. In `cleanup()`: Destroy all Vulkan objects
+7. Add the header to `HolyVulkanEngine/include/hvk/systems.hpp`
+8. Register the system in a demo app (e.g., `app/main.cpp`)
 
-### Precompiled Headers
+### Adding New Shaders
 
-The engine uses a PCH (`HolyVulkanEngine/src/pch.h`) to speed up compilation. It includes common Vulkan headers, STL containers, and GLM.
-
-## Development Practices
-
-### Vulkan 1.4 Features
-The `Device` class is configured to request Vulkan 1.4 and enable modern features like:
-- Dynamic rendering (no render passes)
-- Synchronization2 (pipeline barriers with `VkDependencyInfo`)
-- Buffer device address
-- Timeline semaphores
-- Descriptor indexing
-- Maintenance 5/6 extensions
-
-All feature requests are gracefully disabled if unsupported by the physical device.
-
-### Naming Conventions
-- Classes: `HvkClassName` or `ClassName` (namespace `hvk`)
-- Files: `hvk_snake_case.h` / `.cpp`
-- Vulkan handles often suffixed with underscore (private members)
-
-### Error Handling
-Use `VK_CHECK(expr)` macro for Vulkan calls. It throws `std::runtime_error` on failure.
-
-### File Extensions
-- `.h` for C-compatible or old headers
-- `.hpp` for C++-only headers (new style)
-- `.cpp` for implementation
-- `.old` suffix indicates deprecated/refactored files
-
-## Common Patterns
-
-### Creating a Basic Render Loop
-See `app/main.cpp` for the complete working example. The pattern is:
-
-1. **Setup** - Create `Window`, `Device`, `Swapchain`, `FrameSync`, `StagingUploader`
-2. **Initialize core systems** - Call `Input::init(window)` and `Time::init()`
-3. **Create caches** - `SamplerCache`, `PipelineLayoutCache`, `GraphicsPipelineCache`, `DescriptorAllocator`
-4. **Load resources** - Use `GltfLoader::loadFromFile()` to load models with materials, or create buffers/images manually
-5. **Setup global descriptors** - Create descriptor layouts, allocate descriptor sets for Scene/Camera/Lights
-6. **Create depth/MSAA buffers** - Use `GpuImage` for depth buffer and MSAA resolve targets
-7. **Create pipelines** - Use `PipelineLayoutCache` and `GraphicsPipelineCache` with shader modules
-8. **Main loop:**
-   - `window.poll()` → check for events
-   - `Input::update()` / `Time::update()` → update core systems
-   - Handle input (e.g., toggle cursor lock, camera controls)
-   - Update camera with `cameraController.update(camera)`
-   - Handle resize: `window.wasResized()` → `swap.recreateForWindow()` → recreate depth/MSAA images
-   - `sync.beginFrame()` → begin frame synchronization
-   - `sync.acquireNextImage(swap.handle(), imageIndex)` → acquire swapchain image
-   - Update global descriptors: `globalDescriptors.updateScene/Camera/Lights(frameIndex, ...)`
-   - Get command buffer: `CmdList cmd(sync.cmd())`
-   - Transition images (use `hvk::barrier::make_image_barrier_full()`)
-   - Setup attachments (`ColorAttachment`, `DepthAttachment`) with MSAA resolve if enabled
-   - `cmd.beginRendering(renderArea, {colorAtt}, &depthAtt, 0)` → setup dynamic rendering
-   - `cmd.setViewportScissor()` → set viewport
-   - `cmd.bindGraphicsPipeline()` → bind pipeline
-   - Bind global descriptors → `vkCmdBindDescriptorSets()`
-   - Draw models: `model.draw(cmd, pipelineLayout, globalDescSet, modelTransform)`
-   - `cmd.endRendering()` → end rendering
-   - Transition to present (use `hvk::barrier::color_to_present`)
-   - `sync.submitAndPresent(swap.handle(), imageIndex)` → submit and present
-   - `sync.endFrame()` → end frame
-9. **Cleanup** - `device.waitIdle()`, `Input::cleanup()`
-
-**Note:** Shader paths in `main.cpp` use the `PROJECT_ROOT` macro defined by CMake. This is set to the workspace root directory, so shaders are referenced as `PROJECT_ROOT "/shaders/model.vert.spv"`.
-
-### Using RenderGraph (Alternative Pattern)
-For more complex rendering with multiple passes, use `RenderGraph` instead of manual `CmdList`:
-
-1. Create RenderGraph: `RenderGraph graph({.device = &device, .framesInFlight = 3})`
-2. Declare images: `auto img = graph.createImage({...})` or `graph.importExternalImage({...})`
-3. Add passes with setup and record lambdas:
-   ```cpp
-   graph.addGraphicsPass("my_pass",
-       [&](PassBuilder& pb) { pb.writeColor({.img = img, .load = VK_ATTACHMENT_LOAD_OP_CLEAR}); },
-       [&](CmdList& cmd, const PassContext& ctx) { /* record draw commands */ });
-   ```
-4. Before each frame: `graph.beginFrame(frameIndex, swapExtent)`
-5. Compile and execute: `graph.compile()` → `graph.execute(cmd)`
-
-RenderGraph automatically inserts barriers and manages transient resources. Useful for multi-pass effects (shadow maps, post-processing, etc.).
+1. Create `.vert` and/or `.frag` files in `shaders/`
+2. Use GLSL 450 syntax
+3. Rebuild project - CMake will auto-compile to `.spv`
+4. Load in code: `loadSpirv(PROJECT_ROOT "/shaders/myshader.vert.spv")`
+5. For descriptor set layouts: either use `ShaderReflect` for auto-generation or create manually
 
 ### Loading GLTF Models
-Use `GltfLoader::loadFromFile()` to load GLTF 2.0 models with full support for:
-- PBR materials (albedo, normal, metallic-roughness textures)
-- Hierarchical scene graphs with transforms
-- Automatic mipmap generation
-- Material descriptor set creation
-- Default textures for missing material properties
 
-```cpp
-GltfLoaderOptions options;
-options.generateMipmaps = true;
-options.loadMaterials = true;
-options.loadTextures = true;
+1. Place `.glb` or `.gltf` files in `assets/models/`
+2. Use `GltfLoader::loadFromFile()` with appropriate options:
+   - `generateMipmaps`: Enable for better texture quality
+   - `loadMaterials/loadTextures`: Enable for full PBR rendering
+   - `flipTextureY`: Usually false for Vulkan (depends on asset)
+3. The loader handles vertex/index buffer uploads via `StagingUploader`
+4. Call `model.draw(cmd, pipelineLayout, globalDescSet, modelTransform)` in render loop
 
-Model model = GltfLoader::loadFromFile(
-    device, uploader, descAllocator, materialLayout, samplerCache,
-    "path/to/model.glb", options
-);
+### Handling Window Resize
 
-// Update transforms once after loading
-model.updateTransforms();
+1. Detect resize: `window.wasResized()` returns true
+2. Wait for device idle: `device.waitIdle()`
+3. Recreate swapchain: `swap.recreateForWindow(window)`
+4. Recreate extent-dependent resources (depth buffers, MSAA targets)
+5. Update camera aspect ratio: `camera.updateAspectRatio(width, height)`
+6. Notify render systems: `renderSystem.onResize(renderPass, newExtent)`
+7. Clear resize flag: `window.clearResizedFlag()`
 
-// Draw in render loop
-model.draw(cmd, pipelineLayout, globalDescSet, modelTransform);
-```
+### Using the Global Descriptor System
 
-### Vertex Format and Descriptor Layouts
+1. Create global descriptor set layout: `GlobalDescriptorLayout::create(device)`
+2. Initialize per-frame descriptor sets: `globalDescriptors.init(device, allocator, layout, frameCount)`
+3. Each frame, update uniform data:
+   ```cpp
+   globalDescriptors.updateScene(frameIndex, sceneData);
+   globalDescriptors.updateCamera(frameIndex, camera.toCameraData(width, height));
+   globalDescriptors.updateLights(frameIndex, lightBuffer);
+   ```
+4. Bind Set 0 in render loop: `vkCmdBindDescriptorSets(..., 0, 1, &globalSet, ...)`
 
-**Vertex Format** (`hvk::Vertex` in resources/hvk_mesh.h):
-- `position` (vec3) - Vertex position
-- `normal` (vec3) - Vertex normal
-- `uv` (vec2) - Texture coordinates
-- `color` (vec4) - Vertex color
-- `tangent` (vec4) - Tangent vector (w = handedness for bitangent)
+### Adding ImGui Windows
 
-**Descriptor Set Layout** (typical PBR rendering):
-- **Set 0 (Global)**: Scene data, Camera data, Lights buffer
-- **Set 1 (Material)**: Albedo texture, Normal map, Metallic-Roughness texture
-
-**Push Constants** (typical model rendering):
-- `mat4 model` (64 bytes) - Model transform matrix
-- `mat4 normalMatrix` (64 bytes) - Normal transform matrix (inverse transpose)
-- `MaterialParams` (80 bytes) - Material parameters (albedo factor, metallic/roughness factors, etc.)
-- Total: 208 bytes
-
-### Shader Reflection
-`hvk_shader_reflect.h` provides utilities for parsing SPIR-V to extract descriptor set layouts and push constant ranges (used by pipeline caches).
+1. After `imgui.newFrame()`, use standard Dear ImGui calls:
+   ```cpp
+   ImGui::Begin("My Window");
+   ImGui::Text("Hello: %d", value);
+   ImGui::End();
+   ```
+2. ImGui rendering happens automatically in `imgui.render(cmd)` during command recording
 
 ## Important Notes
 
-- **Architecture transition**: The codebase is mid-refactor from render pass-based to dynamic rendering. Files with `.old` suffixes are deprecated. The old `HvkRenderer` and `IRenderSystem` pattern are being phased out in favor of direct use of caches and command lists.
-- **Window resizing**: Requires explicit swapchain recreation (`Swapchain::recreateForWindow()`) and recreation of extent-dependent resources (depth buffers, MSAA buffers).
-- **MSAA support**: Query device limits (`device.limits().framebufferColorSampleCounts`) to determine max sample count. Use `VK_SAMPLE_COUNT_4_BIT` or higher if supported. When MSAA is enabled, render to a multisample color attachment and resolve to the swapchain image.
-- **Coordinate system**: The engine uses Vulkan's coordinate system (Y-down in clip space). Cameras flip Y in the projection matrix. Use `VK_FRONT_FACE_CLOCKWISE` for front face winding.
-- **Platform**: Currently targets Windows (GLFW + Win32 surface) but can be adapted for other platforms.
-- **C++20 required**: Uses designated initializers, concepts, and other C++20 features.
+### Precompiled Headers
+The engine uses a precompiled header at `HolyVulkanEngine/src/pch.h` containing common Vulkan/STL includes. Modify this to improve compile times when adding frequently-used headers.
+
+### Error Handling
+- Use `VK_CHECK(result)` macro to validate Vulkan calls - throws on error
+- Validation layers are enabled in Debug builds (controlled by `DebugVerbosity`)
+
+### Coordinate Conventions
+- World space: +Y up, +X right, +Z forward (right-handed)
+- Camera view space: +Y up, +X right, -Z forward (right-handed, looking down -Z)
+- NDC: X/Y: -1 to +1, Z: 0 (near) to 1 (far), Y-down (Vulkan-style)
+
+### Resource Naming
+All Vulkan objects support debug names via `debugName` or `debugBaseName` parameters. Use these for RenderDoc/Validation Layer debugging.
+
+### Platform Support
+Currently targets Windows with Visual Studio 2022. CMake presets use `Visual Studio 17 2022` generator. Linux/macOS support would require generator adjustments and platform-specific window/input handling.
