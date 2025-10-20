@@ -1,0 +1,3 @@
+[submodule "HolyVulkanEngine/external/entt"]
+	path = HolyVulkanEngine/external/entt
+	url = https://github.com/skypjack/entt
