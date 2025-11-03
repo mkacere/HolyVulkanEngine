@@ -365,3 +365,6 @@ FodyWeavers.xsd
 
 .claude
 /nul
+
+# Assets (models, textures, etc.)
+/assets
