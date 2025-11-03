@@ -155,6 +155,45 @@ public:
     ) const;
 
     /**
+     * Draw only opaque materials (AlphaMode::Opaque)
+     * Use this for Pass 1 with depth write enabled
+     */
+    void drawOpaque(
+        CmdList& cmd,
+        VkPipelineLayout pipelineLayout,
+        VkDescriptorSet globalDescSet,
+        const glm::mat4& modelTransform = glm::mat4(1.0f)
+    ) const;
+
+    /**
+     * Draw only masked materials (AlphaMode::Mask)
+     * Use this for Pass 2 with depth write enabled and alpha cutoff
+     */
+    void drawMasked(
+        CmdList& cmd,
+        VkPipelineLayout pipelineLayout,
+        VkDescriptorSet globalDescSet,
+        const glm::mat4& modelTransform = glm::mat4(1.0f)
+    ) const;
+
+    /**
+     * Draw only blended/transparent materials (AlphaMode::Blend)
+     * Use this for Pass 3 with depth write disabled
+     *
+     * @param cameraPosition Camera position for back-to-front sorting
+     *
+     * Note: Blended materials are sorted by distance from camera (farthest first)
+     * to ensure correct transparency rendering
+     */
+    void drawBlended(
+        CmdList& cmd,
+        VkPipelineLayout pipelineLayout,
+        VkDescriptorSet globalDescSet,
+        const glm::vec3& cameraPosition,
+        const glm::mat4& modelTransform = glm::mat4(1.0f)
+    ) const;
+
+    /**
      * Draw a specific node (and its children)
      */
     void drawNode(
@@ -183,6 +222,21 @@ public:
     const Node* node(size_t index) const { return index < nodes_.size() ? &nodes_[index] : nullptr; }
 
     const AABB& bounds() const { return bounds_; }
+
+    /**
+     * Calculate world-space bounding box (accounts for node transforms)
+     *
+     * Unlike bounds() which returns local-space bounds, this method transforms
+     * each mesh's bounds by its node's world transform to get the actual
+     * world-space extents of the model.
+     *
+     * Use this for:
+     * - Centering models at origin
+     * - Frustum culling with transformed models
+     * - Proper camera framing
+     */
+    AABB worldBounds() const;
+
     int32_t rootNodeIndex() const { return rootNodeIndex_; }
 
     void setName(const std::string& name) { name_ = name; }
@@ -206,6 +260,17 @@ public:
     Texture* defaultMetallicRoughnessTexture() { return defaultMetallicRoughness_ ? &(*defaultMetallicRoughness_) : nullptr; }
 
 private:
+    /**
+     * Draw node filtered by alpha mode (internal helper)
+     */
+    void drawNodeFiltered(
+        int32_t nodeIndex,
+        CmdList& cmd,
+        VkPipelineLayout pipelineLayout,
+        VkDescriptorSet globalDescSet,
+        const glm::mat4& modelTransform,
+        AlphaMode filterMode
+    ) const;
     // Resources (owned)
     std::vector<Texture> textures_;
     std::vector<Material> materials_;

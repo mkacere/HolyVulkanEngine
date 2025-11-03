@@ -31,6 +31,50 @@ void Model::updateTransforms(int32_t nodeIndex, const glm::mat4& parentTransform
     }
 }
 
+AABB Model::worldBounds() const {
+    AABB worldAABB;  // Starts with min=FLT_MAX, max=-FLT_MAX
+
+    // Helper to transform AABB by a matrix
+    // To properly transform an AABB, we need to transform all 8 corners
+    auto transformAABB = [](const AABB& localBounds, const glm::mat4& transform) -> AABB {
+        if (!localBounds.isValid()) {
+            return AABB();  // Return empty if input is invalid
+        }
+
+        AABB result;
+
+        // Transform all 8 corners of the AABB
+        glm::vec3 corners[8] = {
+            glm::vec3(localBounds.min.x, localBounds.min.y, localBounds.min.z),
+            glm::vec3(localBounds.max.x, localBounds.min.y, localBounds.min.z),
+            glm::vec3(localBounds.min.x, localBounds.max.y, localBounds.min.z),
+            glm::vec3(localBounds.max.x, localBounds.max.y, localBounds.min.z),
+            glm::vec3(localBounds.min.x, localBounds.min.y, localBounds.max.z),
+            glm::vec3(localBounds.max.x, localBounds.min.y, localBounds.max.z),
+            glm::vec3(localBounds.min.x, localBounds.max.y, localBounds.max.z),
+            glm::vec3(localBounds.max.x, localBounds.max.y, localBounds.max.z)
+        };
+
+        for (const auto& corner : corners) {
+            glm::vec4 transformed = transform * glm::vec4(corner, 1.0f);
+            result.expand(glm::vec3(transformed) / transformed.w);
+        }
+
+        return result;
+    };
+
+    // Traverse all nodes and collect transformed mesh bounds
+    for (const Node& node : nodes_) {
+        if (node.meshIndex >= 0 && node.meshIndex < static_cast<int32_t>(meshes_.size())) {
+            const Mesh& mesh = meshes_[node.meshIndex];
+            AABB transformedBounds = transformAABB(mesh.bounds(), node.worldTransform);
+            worldAABB.expand(transformedBounds);
+        }
+    }
+
+    return worldAABB;
+}
+
 void Model::draw(
     CmdList& cmd,
     VkPipelineLayout pipelineLayout,
@@ -147,6 +191,239 @@ void Model::drawNode(
     // DEBUG: Mark first frame complete (do this once for the whole tree)
     if (firstFrame && nodeIndex == 0) {
         firstFrame = false;
+    }
+}
+
+void Model::drawOpaque(
+    CmdList& cmd,
+    VkPipelineLayout pipelineLayout,
+    VkDescriptorSet globalDescSet,
+    const glm::mat4& modelTransform
+) const {
+    // OPTIMIZATION: Global descriptor set is already bound by MeshRenderSystem
+    // No need to rebind it here (saves ~N driver calls per frame where N = entity count)
+
+    // Draw from root node or all top-level nodes
+    if (rootNodeIndex_ >= 0 && rootNodeIndex_ < static_cast<int32_t>(nodes_.size())) {
+        drawNodeFiltered(rootNodeIndex_, cmd, pipelineLayout, globalDescSet, modelTransform, AlphaMode::Opaque);
+
+        for (size_t i = 0; i < nodes_.size(); ++i) {
+            if (nodes_[i].parentIndex == -1 && static_cast<int32_t>(i) != rootNodeIndex_) {
+                drawNodeFiltered(static_cast<int32_t>(i), cmd, pipelineLayout, globalDescSet, modelTransform, AlphaMode::Opaque);
+            }
+        }
+    } else {
+        for (size_t i = 0; i < nodes_.size(); ++i) {
+            if (nodes_[i].parentIndex == -1) {
+                drawNodeFiltered(static_cast<int32_t>(i), cmd, pipelineLayout, globalDescSet, modelTransform, AlphaMode::Opaque);
+            }
+        }
+    }
+}
+
+void Model::drawMasked(
+    CmdList& cmd,
+    VkPipelineLayout pipelineLayout,
+    VkDescriptorSet globalDescSet,
+    const glm::mat4& modelTransform
+) const {
+    // OPTIMIZATION: Global descriptor set is already bound by MeshRenderSystem
+    // No need to rebind it here (saves ~N driver calls per frame where N = entity count)
+
+    // Draw from root node or all top-level nodes
+    if (rootNodeIndex_ >= 0 && rootNodeIndex_ < static_cast<int32_t>(nodes_.size())) {
+        drawNodeFiltered(rootNodeIndex_, cmd, pipelineLayout, globalDescSet, modelTransform, AlphaMode::Mask);
+
+        for (size_t i = 0; i < nodes_.size(); ++i) {
+            if (nodes_[i].parentIndex == -1 && static_cast<int32_t>(i) != rootNodeIndex_) {
+                drawNodeFiltered(static_cast<int32_t>(i), cmd, pipelineLayout, globalDescSet, modelTransform, AlphaMode::Mask);
+            }
+        }
+    } else {
+        for (size_t i = 0; i < nodes_.size(); ++i) {
+            if (nodes_[i].parentIndex == -1) {
+                drawNodeFiltered(static_cast<int32_t>(i), cmd, pipelineLayout, globalDescSet, modelTransform, AlphaMode::Mask);
+            }
+        }
+    }
+}
+
+void Model::drawBlended(
+    CmdList& cmd,
+    VkPipelineLayout pipelineLayout,
+    VkDescriptorSet globalDescSet,
+    const glm::vec3& cameraPosition,
+    const glm::mat4& modelTransform
+) const {
+    // OPTIMIZATION: Global descriptor set is already bound by MeshRenderSystem
+    // No need to rebind it here (saves ~N driver calls per frame where N = entity count)
+
+    // === TRANSPARENCY SORTING ===
+    // Collect all blended meshes with their distances from camera
+    struct TransparentMesh {
+        int32_t nodeIndex;
+        glm::vec3 worldPosition;
+        float distanceFromCamera;
+    };
+
+    std::vector<TransparentMesh> transparentMeshes;
+    transparentMeshes.reserve(32); // Reasonable default
+
+    // Helper lambda to collect transparent meshes
+    auto collectTransparentMeshes = [&](auto& self, int32_t nodeIndex) -> void {
+        if (nodeIndex < 0 || nodeIndex >= static_cast<int32_t>(nodes_.size())) {
+            return;
+        }
+
+        const Node& node = nodes_[nodeIndex];
+        glm::mat4 nodeTransform = modelTransform * node.worldTransform;
+
+        // Check if this node has a blended mesh
+        if (node.meshIndex >= 0 && node.meshIndex < static_cast<int32_t>(meshes_.size())) {
+            const Mesh& mesh = meshes_[node.meshIndex];
+
+            bool isBlended = false;
+            if (mesh.material()) {
+                isBlended = (mesh.material()->alphaMode() == AlphaMode::Blend);
+            }
+
+            if (isBlended) {
+                // Calculate world position (center of mesh bounds)
+                glm::vec3 localCenter = (mesh.bounds().min + mesh.bounds().max) * 0.5f;
+                glm::vec4 worldPos4 = nodeTransform * glm::vec4(localCenter, 1.0f);
+                glm::vec3 worldPos = glm::vec3(worldPos4) / worldPos4.w;
+
+                // Calculate distance from camera
+                float distance = glm::length(worldPos - cameraPosition);
+
+                transparentMeshes.push_back({nodeIndex, worldPos, distance});
+            }
+        }
+
+        // Recursively collect from children
+        for (int32_t childIndex : node.children) {
+            self(self, childIndex);
+        }
+    };
+
+    // Collect all transparent meshes from scene graph
+    if (rootNodeIndex_ >= 0 && rootNodeIndex_ < static_cast<int32_t>(nodes_.size())) {
+        collectTransparentMeshes(collectTransparentMeshes, rootNodeIndex_);
+
+        for (size_t i = 0; i < nodes_.size(); ++i) {
+            if (nodes_[i].parentIndex == -1 && static_cast<int32_t>(i) != rootNodeIndex_) {
+                collectTransparentMeshes(collectTransparentMeshes, static_cast<int32_t>(i));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < nodes_.size(); ++i) {
+            if (nodes_[i].parentIndex == -1) {
+                collectTransparentMeshes(collectTransparentMeshes, static_cast<int32_t>(i));
+            }
+        }
+    }
+
+    // Sort back-to-front (farthest first)
+    std::sort(transparentMeshes.begin(), transparentMeshes.end(),
+        [](const TransparentMesh& a, const TransparentMesh& b) {
+            return a.distanceFromCamera > b.distanceFromCamera; // Descending order
+        });
+
+    // Draw sorted transparent meshes
+    for (const auto& tm : transparentMeshes) {
+        const Node& node = nodes_[tm.nodeIndex];
+        glm::mat4 nodeTransform = modelTransform * node.worldTransform;
+
+        const Mesh& mesh = meshes_[node.meshIndex];
+
+        // Compute normal matrix
+        glm::mat3 normalMat = glm::transpose(glm::inverse(glm::mat3(nodeTransform)));
+        glm::mat4 normalMatrix = glm::mat4(normalMat);
+
+        // Get material parameters
+        MaterialParams materialParams;
+        if (mesh.material()) {
+            materialParams = mesh.material()->params();
+        }
+
+        // Push constants
+        struct PushConstants {
+            glm::mat4 model;
+            glm::mat4 normalMatrix;
+            MaterialParams material;
+        } pc;
+        pc.model = nodeTransform;
+        pc.normalMatrix = normalMatrix;
+        pc.material = materialParams;
+
+        vkCmdPushConstants(cmd.handle(), pipelineLayout,
+                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                           0, sizeof(PushConstants), &pc);
+
+        mesh.draw(cmd, true, pipelineLayout);
+    }
+}
+
+void Model::drawNodeFiltered(
+    int32_t nodeIndex,
+    CmdList& cmd,
+    VkPipelineLayout pipelineLayout,
+    VkDescriptorSet globalDescSet,
+    const glm::mat4& modelTransform,
+    AlphaMode filterMode
+) const {
+    if (nodeIndex < 0 || nodeIndex >= static_cast<int32_t>(nodes_.size())) {
+        return;
+    }
+
+    const Node& node = nodes_[nodeIndex];
+    glm::mat4 nodeTransform = modelTransform * node.worldTransform;
+
+    // Draw mesh if this node has one AND it matches the filter mode
+    if (node.meshIndex >= 0 && node.meshIndex < static_cast<int32_t>(meshes_.size())) {
+        const Mesh& mesh = meshes_[node.meshIndex];
+
+        // Check if this mesh's material matches the filter
+        bool shouldDraw = false;
+        if (mesh.material()) {
+            shouldDraw = (mesh.material()->alphaMode() == filterMode);
+        } else {
+            // No material = treat as opaque
+            shouldDraw = (filterMode == AlphaMode::Opaque);
+        }
+
+        if (shouldDraw) {
+            // Compute normal matrix
+            glm::mat3 normalMat = glm::transpose(glm::inverse(glm::mat3(nodeTransform)));
+            glm::mat4 normalMatrix = glm::mat4(normalMat);
+
+            // Get material parameters
+            MaterialParams materialParams;
+            if (mesh.material()) {
+                materialParams = mesh.material()->params();
+            }
+
+            // Push constants
+            struct PushConstants {
+                glm::mat4 model;
+                glm::mat4 normalMatrix;
+                MaterialParams material;
+            } pc;
+            pc.model = nodeTransform;
+            pc.normalMatrix = normalMatrix;
+            pc.material = materialParams;
+
+            vkCmdPushConstants(cmd.handle(), pipelineLayout,
+                               VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                               0, sizeof(PushConstants), &pc);
+
+            mesh.draw(cmd, true, pipelineLayout);
+        }
+    }
+
+    // Recursively draw children with same filter
+    for (int32_t childIndex : node.children) {
+        drawNodeFiltered(childIndex, cmd, pipelineLayout, globalDescSet, modelTransform, filterMode);
     }
 }
 

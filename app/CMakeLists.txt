@@ -26,3 +26,25 @@ target_link_libraries(GridDemo PRIVATE HVKEngine)
 set_target_properties(GridDemo PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+
+# Skybox demo - Equirect/cubemap background
+add_executable(SkyboxDemo skybox_demo.cpp)
+target_compile_features(SkyboxDemo PRIVATE cxx_std_20)
+target_compile_definitions(SkyboxDemo PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
+target_link_libraries(SkyboxDemo PRIVATE HVKEngine)
+set_target_properties(SkyboxDemo PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+add_dependencies(SkyboxDemo compile_shaders)
+
+# ECS demo - EnTT integration demonstration
+if(HVK_WITH_ECS)
+    add_executable(ECSDemo ecs_demo.cpp)
+    target_compile_features(ECSDemo PRIVATE cxx_std_20)
+    target_compile_definitions(ECSDemo PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(ECSDemo PRIVATE HVKEngine)
+    set_target_properties(ECSDemo PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    )
+    add_dependencies(ECSDemo compile_shaders)
+endif()

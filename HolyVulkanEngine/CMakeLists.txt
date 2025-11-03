@@ -10,6 +10,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Engine library (subdirs will add sources with target_sources)
 add_library(HVKEngine STATIC)
 
+# Define PROJECT_ROOT for shader loading
+target_compile_definitions(HVKEngine PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
+
 # Public & private include paths (superproject-friendly; no CMAKE_SOURCE_DIR)
 target_include_directories(HVKEngine
     PUBLIC
@@ -21,6 +24,7 @@ target_include_directories(HVKEngine
         ${CMAKE_CURRENT_LIST_DIR}/external/VulkanMemoryAllocator/include
         ${CMAKE_CURRENT_LIST_DIR}/external/imgui
         ${CMAKE_CURRENT_LIST_DIR}/external/imgui/backends
+        ${CMAKE_CURRENT_LIST_DIR}/external/entt/single_include
     PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}/src
 )
@@ -67,5 +71,10 @@ add_subdirectory(src/hvk/core)
 add_subdirectory(src/hvk/gfx)
 add_subdirectory(src/hvk/resources)
 add_subdirectory(src/hvk/scene)
-add_subdirectory(src/hvk/systems)
 add_subdirectory(src/hvk/ui)
+
+# ECS module - EnTT-based entity component system
+option(HVK_WITH_ECS "Build ECS module" ON)
+if(HVK_WITH_ECS)
+    add_subdirectory(src/hvk/ecs)
+endif()

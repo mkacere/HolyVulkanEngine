@@ -55,6 +55,7 @@ namespace hvk {
             cullMode == o.cullMode &&
             frontFace == o.frontFace &&
             rasterSamples == o.rasterSamples &&
+            alphaToCoverageEnable == o.alphaToCoverageEnable &&
             depthClampEnable == o.depthClampEnable &&
             rasterizerDiscardEnable == o.rasterizerDiscardEnable &&
             lineWidth == o.lineWidth;
@@ -104,6 +105,7 @@ namespace hvk {
         hash_combine(h, std::hash<uint32_t>{}(k.raster.cullMode));
         hash_combine(h, std::hash<uint32_t>{}(k.raster.frontFace));
         hash_combine(h, std::hash<uint32_t>{}(k.raster.rasterSamples));
+        hash_combine(h, std::hash<uint32_t>{}(k.raster.alphaToCoverageEnable));
         hash_combine(h, std::hash<uint32_t>{}(k.raster.depthClampEnable));
         hash_combine(h, std::hash<uint32_t>{}(k.raster.rasterizerDiscardEnable));
         hash_combine(h, std::hash<float>{}(k.raster.lineWidth));
@@ -277,6 +279,7 @@ namespace hvk {
         // ---- multisample ----
         VkPipelineMultisampleStateCreateInfo ms{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
         ms.rasterizationSamples = d.raster.rasterSamples;
+        ms.alphaToCoverageEnable = d.raster.alphaToCoverageEnable;
         ms.minSampleShading = 0.f;
 
         // ---- depth/stencil ----

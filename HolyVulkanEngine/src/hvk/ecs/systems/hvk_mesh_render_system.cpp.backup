@@ -1,0 +1,100 @@
+#include <hvk/ecs/systems/hvk_mesh_render_system.hpp>
+#include <hvk/ecs/hvk_scene.hpp>
+#include <hvk/ecs/hvk_components.hpp>
+#include <hvk/ecs/hvk_render_components.hpp>
+#include <hvk/gfx/hvk_global_descriptors.hpp>
+#include <hvk/gfx/hvk_pipeline_layout_cache.h>
+
+namespace hvk {
+
+void MeshRenderSystem::init(Scene& scene) {
+    device_ = &scene.resources().device();
+
+    // Create pipeline layout: Set 0 (global) + Set 1 (material) + Push constants
+    // This matches what Model::draw() expects
+
+    // Get descriptor set layouts
+    const DescriptorSetLayout* globalLayout = scene.globalDescriptorLayout();
+    const DescriptorSetLayout* materialLayout = scene.resources().materialDescriptorLayout();
+
+    if (!globalLayout || !materialLayout) {
+        throw std::runtime_error("MeshRenderSystem: Missing descriptor layouts");
+    }
+
+    // Build descriptor set layouts array
+    std::vector<VkDescriptorSetLayout> setLayouts = {
+        globalLayout->handle(),
+        materialLayout->handle()
+    };
+
+    // Push constants: model matrix (64) + normal matrix (64) + MaterialParams (80) = 208 bytes
+    VkPushConstantRange pushRange{};
+    pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    pushRange.offset = 0;
+    pushRange.size = 208;
+
+    // Create the pipeline layout
+    VkPipelineLayoutCreateInfo layoutCI{};
+    layoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    layoutCI.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
+    layoutCI.pSetLayouts = setLayouts.data();
+    layoutCI.pushConstantRangeCount = 1;
+    layoutCI.pPushConstantRanges = &pushRange;
+
+    VK_CHECK(vkCreatePipelineLayout(device_->device(), &layoutCI, nullptr, &pipelineLayout_));
+
+    // TODO: Create graphics pipelines (opaque, masked, blended)
+    // This requires shaders, vertex input description, rasterization state, etc.
+    // For now, rendering will fail because no pipeline is bound
+}
+
+void MeshRenderSystem::render(Scene& scene, CmdList& cmd) {
+    auto& registry = scene.registry();
+
+    // Get global descriptor set from scene
+    GlobalDescriptorSet* globalDescSet = scene.globalDescriptorSet();
+    if (!globalDescSet) {
+        // No global descriptors available - can't render
+        return;
+    }
+
+    // Get current frame's descriptor set
+    VkDescriptorSet globalDescriptorSet = globalDescSet->get(scene.frameIndex());
+
+    // Iterate all entities with MeshComponent and TransformComponent
+    auto view = registry.view<MeshComponent, TransformComponent>();
+
+    for (auto entity : view) {
+        const auto& meshComp = view.get<MeshComponent>(entity);
+        const auto& transform = view.get<TransformComponent>(entity);
+
+        // Skip if not visible
+        if (!meshComp.visible) {
+            continue;
+        }
+
+        // Get model from resource manager
+        const Model* model = scene.resources().getModel(meshComp.modelHandle);
+        if (!model) {
+            continue;
+        }
+
+        // Draw model with transform
+        // The Model::draw() method handles pipeline binding, descriptor sets, and drawing
+        // We pass the pipeline layout, global descriptor set, and the entity's transform matrix
+        // Get LocalToWorld component (computed by TransformSystem)
+        const auto* ltw = registry.try_get<LocalToWorld>(entity);
+        if (!ltw) {
+            continue;  // Transform not yet computed
+        }
+
+        model->draw(
+            cmd,
+            pipelineLayout_,
+            globalDescriptorSet,
+            ltw->matrix
+        );
+    }
+}
+
+} // namespace hvk

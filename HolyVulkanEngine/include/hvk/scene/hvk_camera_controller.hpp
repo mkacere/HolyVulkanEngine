@@ -48,6 +48,13 @@ public:
     void setOrbitDistance(float distance) { orbitDistance_ = distance; }
     float orbitDistance() const { return orbitDistance_; }
 
+    // FPS orientation (useful for initializing controller to match camera's current direction)
+    void setYaw(float yawDegrees) { fpsYaw_ = yawDegrees; }
+    float yaw() const { return fpsYaw_; }
+
+    void setPitch(float pitchDegrees) { fpsPitch_ = pitchDegrees; }
+    float pitch() const { return fpsPitch_; }
+
     // --- Update ---
 
     /**

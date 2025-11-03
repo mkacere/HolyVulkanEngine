@@ -70,17 +70,41 @@ void Camera::setEulerAngles(float pitch, float yaw, float roll) {
     float yawRad = glm::radians(yaw);
     float rollRad = glm::radians(roll);
 
-    // Build quaternion from Euler angles (YXZ order)
-    rotation_ = glm::quat(glm::vec3(pitchRad, yawRad, rollRad));
+    // Build quaternion from Euler angles using explicit axis-angle rotations
+    // This avoids gimbal lock and ensures proper rotation order
+    // For FPS camera: Yaw (around Y) * Pitch (around X) * Roll (around Z)
+    glm::quat qYaw = glm::angleAxis(yawRad, glm::vec3(0, 1, 0));    // Rotation around world Y-axis
+    glm::quat qPitch = glm::angleAxis(pitchRad, glm::vec3(1, 0, 0)); // Rotation around local X-axis
+    glm::quat qRoll = glm::angleAxis(rollRad, glm::vec3(0, 0, 1));   // Rotation around local Z-axis
+
+    rotation_ = qYaw * qPitch * qRoll;
     updateViewMatrix();
 }
 
 glm::vec3 Camera::eulerAngles() const {
-    // Extract Euler angles from quaternion
-    glm::vec3 euler = glm::eulerAngles(rotation_);
+    // Extract Euler angles from forward direction to avoid gimbal lock ambiguity
+    // This gives more stable results for FPS-style cameras
 
-    // Convert to degrees
-    return glm::degrees(euler);
+    glm::vec3 fwd = forward();
+
+    // Yaw: rotation around Y-axis (horizontal)
+    float yaw = glm::degrees(atan2(fwd.x, -fwd.z));
+
+    // Pitch: rotation around X-axis (vertical)
+    float pitch = glm::degrees(asin(-fwd.y));
+
+    // Roll: rotation around Z-axis (for FPS cameras, this should stay near 0)
+    // Extract from up vector to determine roll
+    glm::vec3 upVec = up();
+    glm::vec3 right = glm::cross(fwd, glm::vec3(0, 1, 0));
+    if (glm::length(right) > 0.001f) {
+        right = glm::normalize(right);
+        glm::vec3 expectedUp = glm::cross(right, fwd);
+        float roll = glm::degrees(atan2(glm::dot(upVec, right), glm::dot(upVec, expectedUp)));
+        return glm::vec3(pitch, yaw, roll);
+    }
+
+    return glm::vec3(pitch, yaw, 0.0f);
 }
 
 // --- CameraData Population ---

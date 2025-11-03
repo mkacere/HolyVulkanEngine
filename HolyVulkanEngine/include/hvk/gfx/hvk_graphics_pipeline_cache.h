@@ -56,6 +56,7 @@ namespace hvk {
         VkCullModeFlags cullMode = VK_CULL_MODE_BACK_BIT;
         VkFrontFace frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         VkSampleCountFlagBits rasterSamples = VK_SAMPLE_COUNT_1_BIT;
+        VkBool32 alphaToCoverageEnable = VK_FALSE;  // AAA technique for hair/foliage
         VkBool32 depthClampEnable = VK_FALSE;
         VkBool32 rasterizerDiscardEnable = VK_FALSE;
         float lineWidth = 1.0f;

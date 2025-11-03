@@ -1,3 +1,24 @@
 [submodule "HolyVulkanEngine/external/entt"]
 	path = HolyVulkanEngine/external/entt
 	url = https://github.com/skypjack/entt
+[submodule "HolyVulkanEngine/external/glfw"]
+	path = HolyVulkanEngine/external/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "HolyVulkanEngine/external/glm"]
+	path = HolyVulkanEngine/external/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "HolyVulkanEngine/external/imgui"]
+	path = HolyVulkanEngine/external/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "HolyVulkanEngine/external/SPIRV-Reflect"]
+	path = HolyVulkanEngine/external/SPIRV-Reflect
+	url = https://github.com/KhronosGroup/SPIRV-Reflect.git
+[submodule "HolyVulkanEngine/external/stb"]
+	path = HolyVulkanEngine/external/stb
+	url = https://github.com/nothings/stb.git
+[submodule "HolyVulkanEngine/external/tinygltf"]
+	path = HolyVulkanEngine/external/tinygltf
+	url = https://github.com/syoyo/tinygltf.git
+[submodule "HolyVulkanEngine/external/VulkanMemoryAllocator"]
+	path = HolyVulkanEngine/external/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git

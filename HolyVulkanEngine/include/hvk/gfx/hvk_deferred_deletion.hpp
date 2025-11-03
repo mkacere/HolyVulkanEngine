@@ -181,6 +181,50 @@ namespace hvk {
         bool dirtyOrder_ = false;
     };
 
+    // Lightweight frame-based wrapper used by the engine
+    // Provides a simple per-frame collect() API compatible with existing code.
+    class DeferredDeletion {
+    public:
+        DeferredDeletion() = default;
+
+        // Create a queue tied to a device with a frame window for retirement
+        DeferredDeletion(const Device& device, uint32_t framesInFlight)
+            : framesInFlight_(framesInFlight) {
+            DeferredDeletionCreateInfo ci{};
+            ci.device = &device;
+            ci.debugName = "DeferredDeletion";
+            queue_.init(ci);
+        }
+
+        ~DeferredDeletion() {
+            // Ensure everything is destroyed on shutdown
+            queue_.flush();
+        }
+
+        // Not copyable/movable to match owning lifetime semantics
+        DeferredDeletion(const DeferredDeletion&) = delete;
+        DeferredDeletion& operator=(const DeferredDeletion&) = delete;
+
+        // Call once per frame; retires work that is safely past GPU use
+        void processFrame(uint32_t /*frameIndex*/) {
+            // Advance monotonic epoch and retire anything older than the in-flight window
+            const RetireEpoch completed = (frameEpoch_ >= framesInFlight_)
+                ? (frameEpoch_ - framesInFlight_)
+                : 0;
+            queue_.collect(completed);
+            ++frameEpoch_;
+        }
+
+        // Expose the underlying queue for enqueuing destruction tasks
+        DeferredDeletionQueue& queue() { return queue_; }
+        const DeferredDeletionQueue& queue() const { return queue_; }
+
+    private:
+        DeferredDeletionQueue queue_{};
+        RetireEpoch frameEpoch_ = 0;      // Monotonic epoch incremented each frame
+        uint32_t framesInFlight_ = 0;     // Size of the safety window
+    };
+
 } // namespace hvk
 
 #endif // HVK_DEFERRED_DELETION_H

@@ -1,5 +1,6 @@
 #include <hvk/gfx.hpp>
 #include <hvk/resources.hpp>
+#include <hvk/resources/hvk_cubemap.h>
 #include <hvk/scene.hpp>
 #include <hvk/core.hpp>
 #include <hvk/ui.hpp>
@@ -8,6 +9,8 @@
 #include <vector>
 #include <cstring>
 #include <iostream>
+#include <filesystem>
+#include <algorithm>
 
 #ifndef PROJECT_ROOT
 #define PROJECT_ROOT "."
@@ -23,6 +26,38 @@ static std::vector<uint32_t> loadSpirv(const char* path) {
     std::vector<uint32_t> words(bytes.size() / 4);
     std::memcpy(words.data(), bytes.data(), bytes.size());
     return words;
+}
+
+// Scan the models directory for .glb and .gltf files
+static std::vector<std::string> scanModelFiles(const std::string& modelsDir) {
+    namespace fs = std::filesystem;
+    std::vector<std::string> modelFiles;
+
+    try {
+        if (!fs::exists(modelsDir) || !fs::is_directory(modelsDir)) {
+            std::cout << "Warning: Models directory not found: " << modelsDir << std::endl;
+            return modelFiles;
+        }
+
+        for (const auto& entry : fs::directory_iterator(modelsDir)) {
+            if (entry.is_regular_file()) {
+                std::string ext = entry.path().extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+                if (ext == ".glb" || ext == ".gltf") {
+                    modelFiles.push_back(entry.path().filename().string());
+                }
+            }
+        }
+
+        // Sort alphabetically for consistent ordering
+        std::sort(modelFiles.begin(), modelFiles.end());
+
+    } catch (const std::exception& e) {
+        std::cout << "Error scanning models directory: " << e.what() << std::endl;
+    }
+
+    return modelFiles;
 }
 
 int main() {
@@ -92,16 +127,36 @@ int main() {
         DescriptorAllocator descAllocator(allocCI);
 
         // 7) Load GLTF model -------------------------------------------------------
-        std::cout << "[7/9] Loading GLTF model from assets..." << std::endl;
+        std::cout << "[7/9] Scanning and loading GLTF models..." << std::endl;
 
         // Create material descriptor set layout
         DescriptorSetLayout materialLayout = Material::createDescriptorSetLayout(device);
 
-        // Load model
-        //const char* modelPath = PROJECT_ROOT "/assets/models/hk_mp7_a1.glb";
-        const char* modelPath = PROJECT_ROOT "/assets/models/miku.glb";
-        //const char* modelPath = PROJECT_ROOT "/assets/models/Crystar_Kokoro_Fudoji.glb";
-        std::cout << "    Loading: " << modelPath << std::endl;
+        // Scan available models
+        std::string modelsDir = std::string(PROJECT_ROOT) + "/assets/models";
+        std::vector<std::string> availableModels = scanModelFiles(modelsDir);
+
+        if (availableModels.empty()) {
+            std::cerr << "ERROR: No models found in " << modelsDir << std::endl;
+            std::cerr << "Please add .glb or .gltf files to the assets/models directory." << std::endl;
+            return 1;
+        }
+
+        std::cout << "    Found " << availableModels.size() << " model(s):" << std::endl;
+        for (size_t i = 0; i < availableModels.size(); ++i) {
+            std::cout << "      [" << i << "] " << availableModels[i] << std::endl;
+        }
+
+        // Model loader state
+        int currentModelIndex = 0;  // Start with first model
+        int selectedModelIndex = 0; // UI selection
+        bool requestLoadModel = false;
+        std::string loadErrorMessage;
+        glm::vec3 modelCenter = glm::vec3(0.0f);  // Model center for centering transform
+
+        // Load initial model
+        std::string initialModelPath = modelsDir + "/" + availableModels[currentModelIndex];
+        std::cout << "    Loading initial model: " << availableModels[currentModelIndex] << std::endl;
 
         GltfLoaderOptions loaderOptions;
         loaderOptions.generateMipmaps = true;
@@ -117,7 +172,7 @@ int main() {
             descAllocator,
             materialLayout,
             samplerCache,
-            modelPath,
+            initialModelPath.c_str(),
             loaderOptions
         );
 
@@ -126,6 +181,13 @@ int main() {
         std::cout << "    - Materials: " << model.materialCount() << std::endl;
         std::cout << "    - Meshes: " << model.meshCount() << std::endl;
         std::cout << "    - Nodes: " << model.nodeCount() << std::endl;
+
+        // Calculate initial model center for centering transform (use WORLD-SPACE bounds)
+        const auto initialBounds = model.worldBounds();
+        modelCenter = (initialBounds.min + initialBounds.max) * 0.5f;  // Update persistent variable
+        std::cout << "    - World bounds: min(" << initialBounds.min.x << ", " << initialBounds.min.y << ", " << initialBounds.min.z
+                  << ") max(" << initialBounds.max.x << ", " << initialBounds.max.y << ", " << initialBounds.max.z << ")" << std::endl;
+        std::cout << "    - World center: (" << modelCenter.x << ", " << modelCenter.y << ", " << modelCenter.z << ")" << std::endl;
 
         // 8) Setup global descriptors ----------------------------------------------
         std::cout << "[8/9] Setting up global descriptors (Scene, Camera, Lights)..." << std::endl;
@@ -175,25 +237,42 @@ int main() {
         float aspect = static_cast<float>(window.framebufferSize().width) /
                        static_cast<float>(window.framebufferSize().height);
 
-        // Frame camera to model bounds so it's visible regardless of asset scale
-        const auto& bounds = model.bounds();
-        glm::vec3 center = -(bounds.min + bounds.max) * 0.5f;
-        float diag = glm::length(bounds.max - bounds.min);
-        float radius = (diag > 0.0001f) ? (diag * 0.5f) : 1.0f;
-        glm::vec3 viewDir = glm::normalize(glm::vec3(1.0f, 0.5f, 1.0f));
-        glm::vec3 camPos = center + viewDir * (radius * 2.5f);
+        // Adaptive camera setup based on model bounds (model will be centered at origin)
+        glm::vec3 modelSize = initialBounds.max - initialBounds.min;
 
+        // Calculate the diagonal of the bounding box to determine model scale
+        float modelDiagonal = glm::length(modelSize);
+
+        // Position camera at a distance proportional to model size
+        // Distance formula: ensure the model fits in view with some padding
+        constexpr float fovRadians = glm::radians(60.0f);
+        float distance = (modelDiagonal * 0.5f) / glm::tan(fovRadians * 0.5f) * 1.5f;  // 1.5x for padding
+
+        // Position camera: offset from origin (since model is centered at 0,0,0)
+        // Look at origin from a 45-degree angle (front-right, elevated view)
+        // Use higher Y component (1.0 instead of 0.5) for better viewing angle
+        glm::vec3 cameraOffset = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f)) * distance;
+        glm::vec3 camPos = cameraOffset;  // Position relative to origin
+
+        // Camera looks at origin (0,0,0) where the model is centered
         Camera camera = Camera::createPerspective(
-            camPos,                         // position
-            -center,                         // look-at model center
-            60.0f,                          // FOV
-            aspect,                         // aspect ratio
-            0.1f,                           // near plane
-            std::max(1000.0f, radius * 10.0f) // far plane
+            camPos,           // camera position (adaptive)
+            glm::vec3(0.0f),  // look-at target (origin)
+            60.0f,            // FOV
+            aspect,           // aspect ratio
+            0.1f,             // near plane
+            distance * 10.0f  // far plane (based on model scale)
         );
+
+        // Calculate yaw and pitch from camera direction to initialize FPS controller correctly
+        glm::vec3 direction = glm::normalize(glm::vec3(0.0f) - camPos);  // Direction from camera to origin
+        float yaw = glm::degrees(atan2(direction.z, direction.x));       // Horizontal angle
+        float pitch = glm::degrees(asin(direction.y));                    // Vertical angle
 
         CameraController cameraController;
         cameraController.setMode(CameraController::Mode::FPS);
+        cameraController.setYaw(yaw);      // Initialize with correct yaw
+        cameraController.setPitch(pitch);  // Initialize with correct pitch
         cameraController.setMoveSpeed(5.0f);
         cameraController.setFastMoveMultiplier(3.0f);
         cameraController.setMouseSensitivity(0.15f);
@@ -276,6 +355,50 @@ int main() {
         ImageView depthView;
         depthView.create(depthViewCI);
 
+        // 10) Optional: Load skybox cubemap ---------------------------------------
+        std::cout << "[10/12] Loading skybox (optional)..." << std::endl;
+        bool hasSkybox = false;
+        Cubemap skybox;
+        DescriptorSetLayout skyboxLayout;
+        VkDescriptorSet skyboxSet = VK_NULL_HANDLE;
+        VkPipelineLayout skyboxPipelineLayout = VK_NULL_HANDLE;
+        VkPipeline skyboxPipeline = VK_NULL_HANDLE;
+
+        {
+            std::array<std::string, 6> faces = {
+                std::string(PROJECT_ROOT "/assets/skybox/px.png"), // +X (right)
+                std::string(PROJECT_ROOT "/assets/skybox/nx.png"), // -X (left)
+                std::string(PROJECT_ROOT "/assets/skybox/py.png"), // +Y (top)
+                std::string(PROJECT_ROOT "/assets/skybox/ny.png"), // -Y (bottom)
+                std::string(PROJECT_ROOT "/assets/skybox/pz.png"), // +Z (front)
+                std::string(PROJECT_ROOT "/assets/skybox/nz.png")  // -Z (back)
+            };
+
+            skybox = Cubemap::loadFromFiles(device, uploader, samplerCache, faces, /*mips*/true, /*sRGB*/true, "skybox");
+            if (skybox) {
+                // Create skybox descriptor set layout: set 1, binding 0 = combined image sampler (cube)
+                DescriptorSetLayoutCreateInfo lci{};
+                lci.device = &device;
+                VkDescriptorSetLayoutBinding b{};
+                b.binding = 0;
+                b.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                b.descriptorCount = 1;
+                b.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                lci.bindings.push_back(b);
+                lci.debugName = "set1_skybox";
+                skyboxLayout = DescriptorSetLayout{ lci };
+
+                skyboxSet = descAllocator.allocate(skyboxLayout);
+                DescriptorWrites writes;
+                writes.writeImage(skyboxSet, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    skybox.view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, skybox.sampler());
+                writes.commit(device.device());
+                hasSkybox = true;
+            } else {
+                std::cout << "    Skybox not found (place px/nx/py/ny/pz/nz in assets/skybox). Skipping." << std::endl;
+            }
+        }
+
         // 11) Load shaders and create pipeline ------------------------------------
         auto vs_model = loadSpirv(PROJECT_ROOT "/shaders/model.vert.spv");
         auto fs_model = loadSpirv(PROJECT_ROOT "/shaders/model.frag.spv");
@@ -310,59 +433,188 @@ int main() {
 
         VkPipelineLayout modelPipelineLayout = layoutCache.get(pipeLayoutDesc);
 
+        // Skybox pipeline (if skybox loaded)
+        if (hasSkybox) {
+            auto vs_sky = loadSpirv(PROJECT_ROOT "/shaders/skybox.vert.spv");
+            auto fs_sky = loadSpirv(PROJECT_ROOT "/shaders/skybox.frag.spv");
+
+            ShaderStageDesc vsSky{};
+            {
+                VkShaderModuleCreateInfo sci{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
+                sci.codeSize = vs_sky.size() * 4; sci.pCode = vs_sky.data();
+                VkShaderModule mod{}; VK_CHECK(vkCreateShaderModule(device.device(), &sci, nullptr, &mod));
+                vsSky.stage = VK_SHADER_STAGE_VERTEX_BIT; vsSky.module = mod; vsSky.entry = "main";
+            }
+            ShaderStageDesc fsSky{};
+            {
+                VkShaderModuleCreateInfo sci{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
+                sci.codeSize = fs_sky.size() * 4; sci.pCode = fs_sky.data();
+                VkShaderModule mod{}; VK_CHECK(vkCreateShaderModule(device.device(), &sci, nullptr, &mod));
+                fsSky.stage = VK_SHADER_STAGE_FRAGMENT_BIT; fsSky.module = mod; fsSky.entry = "main";
+            }
+
+            // Pipeline layout: Set 0 (global), Set 1 (skybox)
+            PipelineLayoutDesc skyPL{};
+            skyPL.setLayouts.push_back(globalLayout.handle());
+            skyPL.setLayouts.push_back(skyboxLayout.handle());
+            skyboxPipelineLayout = layoutCache.get(skyPL);
+
+            // No vertex input (fullscreen triangle from gl_VertexIndex)
+            VertexInputDesc viSky{};
+
+            RasterState rsSky{};
+            rsSky.cullMode = VK_CULL_MODE_NONE;
+            rsSky.frontFace = VK_FRONT_FACE_CLOCKWISE;
+            rsSky.rasterSamples = msaaSamples;
+
+            DepthStencilState dssSky{};
+            dssSky.depthTestEnable = VK_FALSE;  // skybox does not need depth test
+            dssSky.depthWriteEnable = VK_FALSE; // and does not write depth
+
+            ColorBlendState cbsSky{};
+            cbsSky.attachments.resize(1);
+            cbsSky.attachments[0].blendEnable = VK_FALSE;
+            cbsSky.attachments[0].colorWriteMask =
+                VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+            RenderFormats fmtsSky{};
+            fmtsSky.colorFormats = { swap.colorFormat() };
+            fmtsSky.depthFormat = VK_FORMAT_D32_SFLOAT;
+
+            GraphicsPipelineDesc gpSky{};
+            gpSky.layout = skyboxPipelineLayout;
+            gpSky.stages = { vsSky, fsSky };
+            gpSky.vertexInput = viSky;
+            gpSky.raster = rsSky;
+            gpSky.depthStencil = dssSky;
+            gpSky.colorBlend = cbsSky;
+            gpSky.formats = fmtsSky;
+            gpSky.dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+            skyboxPipeline = pipeCache.get(gpSky);
+
+            // Destroy temp shader modules
+            vkDestroyShaderModule(device.device(), vsSky.module, nullptr);
+            vkDestroyShaderModule(device.device(), fsSky.module, nullptr);
+        }
+
         // Vertex input (matches hvk::Vertex)
         VertexInputDesc vi{};
         vi.bindings.push_back(Vertex::getBindingDescription());
         vi.attributes = Vertex::getAttributeDescriptions();
 
-        // Color blend (1 attachment, alpha blending enabled for transparent materials)
-        ColorBlendState cbs{};
-        cbs.attachments.resize(1);
-        cbs.attachments[0].blendEnable = VK_TRUE;
-        cbs.attachments[0].colorWriteMask =
-            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        // ===== Three-Pass Transparency Setup =====
+        // We create three pipelines for GLTF-compliant transparency rendering:
+        // 1. Opaque: depth write ON, blending OFF
+        // 2. Masked: depth write ON, blending OFF (alpha cutoff in shader)
+        // 3. Blended: depth write OFF, blending ON
 
-        // Standard alpha blending: srcAlpha * srcColor + (1 - srcAlpha) * dstColor
-        cbs.attachments[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        cbs.attachments[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        cbs.attachments[0].colorBlendOp = VK_BLEND_OP_ADD;
-        cbs.attachments[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        cbs.attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-        cbs.attachments[0].alphaBlendOp = VK_BLEND_OP_ADD;
-
-        // Depth test enabled
-        DepthStencilState dss{};
-        dss.depthTestEnable = VK_TRUE;
-        dss.depthWriteEnable = VK_TRUE;
-        dss.depthCompare = VK_COMPARE_OP_LESS;
-
-        // Raster state
+        // Raster state (shared by all pipelines)
         RasterState rs{};
-        // Disable culling to avoid winding issues across assets
         rs.cullMode = VK_CULL_MODE_NONE;
-        // With Vulkan-style projection (Y flipped), front faces appear clockwise.
-        // Use CLOCKWISE to avoid backface culling of visible geometry.
         rs.frontFace = VK_FRONT_FACE_CLOCKWISE;
-        // Set MSAA sample count
         rs.rasterSamples = msaaSamples;
 
-        // Render formats
+        // Render formats (shared by all pipelines)
         RenderFormats fmts{};
         fmts.colorFormats = { swap.colorFormat() };
         fmts.depthFormat = VK_FORMAT_D32_SFLOAT;
 
-        // Create graphics pipeline
-        GraphicsPipelineDesc gp{};
-        gp.layout = modelPipelineLayout;
-        gp.stages = { vs, fs };
-        gp.vertexInput = vi;
-        gp.raster = rs;
-        gp.depthStencil = dss;
-        gp.colorBlend = cbs;
-        gp.formats = fmts;
-        gp.dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+        // === Pipeline 1: Opaque Materials ===
+        DepthStencilState dssOpaque{};
+        dssOpaque.depthTestEnable = VK_TRUE;
+        dssOpaque.depthWriteEnable = VK_TRUE;   // Write depth
+        dssOpaque.depthCompare = VK_COMPARE_OP_LESS;
 
-        VkPipeline modelPipeline = pipeCache.get(gp);
+        ColorBlendState cbsOpaque{};
+        cbsOpaque.attachments.resize(1);
+        cbsOpaque.attachments[0].blendEnable = VK_FALSE;  // No blending for opaque
+        cbsOpaque.attachments[0].colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+        GraphicsPipelineDesc gpOpaque{};
+        gpOpaque.layout = modelPipelineLayout;
+        gpOpaque.stages = { vs, fs };
+        gpOpaque.vertexInput = vi;
+        gpOpaque.raster = rs;
+        gpOpaque.depthStencil = dssOpaque;
+        gpOpaque.colorBlend = cbsOpaque;
+        gpOpaque.formats = fmts;
+        gpOpaque.dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+        VkPipeline opaquePipeline = pipeCache.get(gpOpaque);
+
+        // === Pipeline 2: Masked Materials (Alpha Cutout with Alpha-to-Coverage) ===
+        // Alpha-to-Coverage: AAA industry standard for hair/foliage
+        // - Converts fragment alpha to MSAA coverage mask
+        // - Gives smooth edges without blending
+        // - Depth writes enabled = proper depth ordering
+        // - Used by Unreal Engine, Unity, and virtually all AAA games
+
+        DepthStencilState dssMasked{};
+        dssMasked.depthTestEnable = VK_TRUE;
+        dssMasked.depthWriteEnable = VK_TRUE;   // Write depth (cutout acts like opaque)
+        dssMasked.depthCompare = VK_COMPARE_OP_LESS;
+
+        ColorBlendState cbsMasked{};
+        cbsMasked.attachments.resize(1);
+        cbsMasked.attachments[0].blendEnable = VK_FALSE;  // No blending (alpha-to-coverage handles edges)
+        cbsMasked.attachments[0].colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+        // Enable alpha-to-coverage for smooth hair/eyelash edges (AAA industry standard)
+        RasterState rsMasked = rs;  // Copy base raster state
+        rsMasked.alphaToCoverageEnable = VK_TRUE;  // KEY: This enables alpha-to-coverage!
+
+        GraphicsPipelineDesc gpMasked{};
+        gpMasked.layout = modelPipelineLayout;
+        gpMasked.stages = { vs, fs };
+        gpMasked.vertexInput = vi;
+        gpMasked.raster = rsMasked;  // Use raster state with alpha-to-coverage enabled
+        gpMasked.depthStencil = dssMasked;
+        gpMasked.colorBlend = cbsMasked;
+        gpMasked.formats = fmts;
+        gpMasked.dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+        VkPipeline maskedPipeline = pipeCache.get(gpMasked);
+
+        // === Pipeline 3: Blended Materials (True Transparency) ===
+        DepthStencilState dssBlended{};
+        dssBlended.depthTestEnable = VK_TRUE;
+        dssBlended.depthWriteEnable = VK_FALSE;  // NO depth write (fixes transparency issue!)
+        dssBlended.depthCompare = VK_COMPARE_OP_LESS;
+
+        ColorBlendState cbsBlended{};
+        cbsBlended.attachments.resize(1);
+        cbsBlended.attachments[0].blendEnable = VK_TRUE;  // Enable blending
+        cbsBlended.attachments[0].colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+        // Standard alpha blending: srcAlpha * srcColor + (1 - srcAlpha) * dstColor
+        cbsBlended.attachments[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        cbsBlended.attachments[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        cbsBlended.attachments[0].colorBlendOp = VK_BLEND_OP_ADD;
+        cbsBlended.attachments[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        cbsBlended.attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        cbsBlended.attachments[0].alphaBlendOp = VK_BLEND_OP_ADD;
+
+        GraphicsPipelineDesc gpBlended{};
+        gpBlended.layout = modelPipelineLayout;
+        gpBlended.stages = { vs, fs };
+        gpBlended.vertexInput = vi;
+        gpBlended.raster = rs;
+        gpBlended.depthStencil = dssBlended;
+        gpBlended.colorBlend = cbsBlended;
+        gpBlended.formats = fmts;
+        gpBlended.dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+        VkPipeline blendedPipeline = pipeCache.get(gpBlended);
+
+        std::cout << "    Created 3 pipelines: Opaque, Masked, Blended" << std::endl;
 
         // Destroy shader modules
         vkDestroyShaderModule(device.device(), vs.module, nullptr);
@@ -439,7 +691,7 @@ int main() {
 
                 // Scene info window
                 ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-                ImGui::Text("Model: %s", modelPath);
+                ImGui::Text("Current Model: %s", availableModels[currentModelIndex].c_str());
                 ImGui::Text("Textures: %u", model.textureCount());
                 ImGui::Text("Materials: %u", model.materialCount());
                 ImGui::Text("Meshes: %u", model.meshCount());
@@ -447,6 +699,50 @@ int main() {
                 ImGui::Separator();
                 ImGui::Text("Lights: %u", lightBuffer.lightCount);
                 ImGui::ColorEdit3("Ambient", &sceneData.ambientColor.x);
+                ImGui::End();
+
+                // Model Loader window
+                ImGui::Begin("Model Loader", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+                ImGui::Text("Available Models (%zu)", availableModels.size());
+                ImGui::Separator();
+
+                // Dropdown to select model
+                if (ImGui::BeginCombo("Select Model", availableModels[selectedModelIndex].c_str())) {
+                    for (int i = 0; i < static_cast<int>(availableModels.size()); ++i) {
+                        bool isSelected = (selectedModelIndex == i);
+                        if (ImGui::Selectable(availableModels[i].c_str(), isSelected)) {
+                            selectedModelIndex = i;
+                        }
+                        if (isSelected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+
+                ImGui::Spacing();
+
+                // Show if selected model is different from current
+                bool canLoad = (selectedModelIndex != currentModelIndex);
+                if (!canLoad) {
+                    ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "(Model already loaded)");
+                }
+
+                // Load button
+                ImGui::BeginDisabled(!canLoad);
+                if (ImGui::Button("Load Selected Model", ImVec2(200, 30))) {
+                    requestLoadModel = true;
+                    loadErrorMessage.clear();
+                }
+                ImGui::EndDisabled();
+
+                // Show error message if loading failed
+                if (!loadErrorMessage.empty()) {
+                    ImGui::Spacing();
+                    ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error:");
+                    ImGui::TextWrapped("%s", loadErrorMessage.c_str());
+                }
+
                 ImGui::End();
 
                 // Close button - only visible when cursor is enabled
@@ -532,6 +828,78 @@ int main() {
 
                 // Notify ImGui of resize
                 imgui.onResize(ext.width, ext.height);
+            }
+
+            // Handle dynamic model loading
+            if (requestLoadModel && selectedModelIndex != currentModelIndex) {
+                std::cout << "\n=== Loading new model ===" << std::endl;
+                std::cout << "Unloading: " << availableModels[currentModelIndex] << std::endl;
+                std::cout << "Loading: " << availableModels[selectedModelIndex] << std::endl;
+
+                try {
+                    // Wait for all GPU operations to complete
+                    device.waitIdle();
+
+                    // Destroy old model (RAII will handle cleanup)
+                    model = Model();
+
+                    // Load new model
+                    std::string newModelPath = modelsDir + "/" + availableModels[selectedModelIndex];
+                    model = GltfLoader::loadFromFile(
+                        device,
+                        uploader,
+                        descAllocator,
+                        materialLayout,
+                        samplerCache,
+                        newModelPath.c_str(),
+                        loaderOptions
+                    );
+
+                    std::cout << "Model loaded successfully!" << std::endl;
+                    std::cout << "  - Textures: " << model.textureCount() << std::endl;
+                    std::cout << "  - Materials: " << model.materialCount() << std::endl;
+                    std::cout << "  - Meshes: " << model.meshCount() << std::endl;
+                    std::cout << "  - Nodes: " << model.nodeCount() << std::endl;
+
+                    // Update model center for centering transform (use WORLD-SPACE bounds)
+                    const auto bounds = model.worldBounds();
+                    modelCenter = (bounds.min + bounds.max) * 0.5f;
+                    std::cout << "  - World bounds: min(" << bounds.min.x << ", " << bounds.min.y << ", " << bounds.min.z
+                              << ") max(" << bounds.max.x << ", " << bounds.max.y << ", " << bounds.max.z << ")" << std::endl;
+                    std::cout << "  - World center: (" << modelCenter.x << ", " << modelCenter.y << ", " << modelCenter.z << ")" << std::endl;
+
+                    // Update camera to fit new model bounds (model is centered at origin)
+                    glm::vec3 modelSize = bounds.max - bounds.min;
+                    float modelDiagonal = glm::length(modelSize);
+                    float fovRadians = glm::radians(60.0f);
+                    float distance = (modelDiagonal * 0.5f) / glm::tan(fovRadians * 0.5f) * 1.5f;
+                    glm::vec3 cameraOffset = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f)) * distance;
+                    glm::vec3 newCamPos = cameraOffset;  // Position relative to origin
+
+                    camera.setPosition(newCamPos);
+                    camera.lookAt(glm::vec3(0.0f));  // Look at origin
+                    camera.setFarPlane(distance * 10.0f);  // Update far plane for new model size!
+
+                    // Update FPS controller orientation to match new camera direction
+                    glm::vec3 newDirection = glm::normalize(glm::vec3(0.0f) - newCamPos);
+                    float newYaw = glm::degrees(atan2(newDirection.z, newDirection.x));
+                    float newPitch = glm::degrees(asin(newDirection.y));
+                    cameraController.setYaw(newYaw);
+                    cameraController.setPitch(newPitch);
+
+                    // Update current index
+                    currentModelIndex = selectedModelIndex;
+                    loadErrorMessage.clear();
+
+                } catch (const std::exception& e) {
+                    std::cerr << "ERROR loading model: " << e.what() << std::endl;
+                    loadErrorMessage = std::string("Failed to load model: ") + e.what();
+
+                    // Revert selection if load failed
+                    selectedModelIndex = currentModelIndex;
+                }
+
+                requestLoadModel = false;
             }
 
             // Begin frame
@@ -628,17 +996,48 @@ int main() {
             // We already flip Y in the projection matrix; use a regular (non-flipped) viewport.
             cmd.setViewportScissor(ext, false);
 
-            // Bind pipeline and global descriptors
-            cmd.bindGraphicsPipeline(modelPipeline);
+            // Skybox (optional)
+            if (hasSkybox) {
+                cmd.bindGraphicsPipeline(skyboxPipeline);
+                VkDescriptorSet sets[2] = { globalDescriptors.get(frameIndex), skyboxSet };
+                vkCmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    skyboxPipelineLayout, 0, 2, sets, 0, nullptr);
+                cmd.draw(3);
+            }
+
+            // === Three-Pass Rendering ===
+            // Pass 1: Opaque materials (depth write ON)
+            // Pass 2: Masked materials (depth write ON, shader alpha cutoff)
+            // Pass 3: Blended materials (depth write OFF, alpha blending)
+
             VkDescriptorSet globalSet = globalDescriptors.get(frameIndex);
+
+            // Apply centering transform to place model at world origin (0,0,0)
+            glm::mat4 modelTransform = glm::translate(glm::mat4(1.0f), -modelCenter);
+
+            // Pass 1: Render opaque materials
+            cmd.bindGraphicsPipeline(opaquePipeline);
             vkCmdBindDescriptorSets(
                 cmd.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
                 modelPipelineLayout, 0, 1, &globalSet, 0, nullptr
             );
+            model.drawOpaque(cmd, modelPipelineLayout, globalSet, modelTransform);
 
-            // Render model
-            glm::mat4 modelTransform = glm::mat4(1.0f);
-            model.draw(cmd, modelPipelineLayout, globalSet, modelTransform);
+            // Pass 2: Render masked materials (alpha cutout)
+            cmd.bindGraphicsPipeline(maskedPipeline);
+            vkCmdBindDescriptorSets(
+                cmd.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                modelPipelineLayout, 0, 1, &globalSet, 0, nullptr
+            );
+            model.drawMasked(cmd, modelPipelineLayout, globalSet, modelTransform);
+
+            // Pass 3: Render blended materials (transparent, sorted back-to-front)
+            cmd.bindGraphicsPipeline(blendedPipeline);
+            vkCmdBindDescriptorSets(
+                cmd.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                modelPipelineLayout, 0, 1, &globalSet, 0, nullptr
+            );
+            model.drawBlended(cmd, modelPipelineLayout, globalSet, camera.position(), modelTransform);
 
             // Render ImGui
             imgui.render(cmd);

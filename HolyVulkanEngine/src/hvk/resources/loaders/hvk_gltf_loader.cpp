@@ -180,6 +180,34 @@ void loadMaterials(
             params.alphaMode = AlphaMode::Blend;
         }
 
+        // === AAA TRANSPARENCY OVERRIDE ===
+        // Override BLEND→MASK for hair/eyebrows/foliage (industry standard technique)
+        // This enables alpha-to-coverage which gives proper depth ordering + smooth edges
+        // Used by Unreal Engine, Unity, and all AAA games for hair rendering
+        //
+        // NOTE: Eyelashes are excluded because they're very thin single-layer geometry
+        // that benefits more from smooth alpha blending than depth-correct ordering.
+        // The MSAA dithering pattern is too visible on such fine details.
+        std::string matNameLower = gltfMat.name;
+        std::transform(matNameLower.begin(), matNameLower.end(), matNameLower.begin(), ::tolower);
+
+        if (params.alphaMode == AlphaMode::Blend) {
+            bool isHairOrFoliage = (matNameLower.find("hair") != std::string::npos ||
+                                    matNameLower.find("eyebrow") != std::string::npos ||
+                                    matNameLower.find("fur") != std::string::npos ||
+                                    matNameLower.find("grass") != std::string::npos ||
+                                    matNameLower.find("leaf") != std::string::npos ||
+                                    matNameLower.find("leaves") != std::string::npos ||
+                                    matNameLower.find("foliage") != std::string::npos);
+
+            if (isHairOrFoliage) {
+                params.alphaMode = AlphaMode::Mask;
+                params.alphaCutoff = 0.5f;  // Standard cutoff for hair
+                std::cout << "  [AAA OVERRIDE] Material '" << gltfMat.name
+                          << "': BLEND→MASK (alpha-to-coverage for hair/foliage)" << std::endl;
+            }
+        }
+
         // Get texture pointers (if loaded)
         Texture* albedo = nullptr;
         Texture* normal = nullptr;
