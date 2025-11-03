@@ -1,3 +1,11 @@
+/**
+ * @file hvk_frame_context.hpp
+ * @brief Per-frame rendering context
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Lightweight frame-level data passed to render systems including timing and descriptors.
+ */
+
 #ifndef HVK_FRAME_CONTEXT_HPP
 #define HVK_FRAME_CONTEXT_HPP
 

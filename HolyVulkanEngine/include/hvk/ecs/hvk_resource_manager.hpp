@@ -1,3 +1,11 @@
+/**
+ * @file hvk_resource_manager.hpp
+ * @brief ECS resource management
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Manages shared resources like textures and materials for ECS entities.
+ */
+
 #ifndef HVK_ECS_RESOURCE_MANAGER_HPP
 #define HVK_ECS_RESOURCE_MANAGER_HPP
 

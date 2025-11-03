@@ -1,4 +1,13 @@
-﻿#ifndef HVK_SAMPLER_CACHE_H
+﻿/**
+ * @file hvk_sampler_cache.h
+ * @brief Texture sampler caching and creation
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Deduplicates and caches VkSampler objects based on filtering, addressing,
+ * and mipmap settings with thread-safe access.
+ */
+
+#ifndef HVK_SAMPLER_CACHE_H
 #define HVK_SAMPLER_CACHE_H
 
 #include <vulkan/vulkan.h>

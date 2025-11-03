@@ -1,3 +1,11 @@
+/**
+ * @file hvk_camera_system.hpp
+ * @brief Camera update system
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Updates camera data and manages active camera selection.
+ */
+
 #ifndef HVK_ECS_CAMERA_SYSTEM_HPP
 #define HVK_ECS_CAMERA_SYSTEM_HPP
 

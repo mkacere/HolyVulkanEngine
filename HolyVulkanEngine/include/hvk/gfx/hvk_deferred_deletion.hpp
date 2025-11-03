@@ -1,3 +1,11 @@
+/**
+ * @file hvk_deferred_deletion.hpp
+ * @brief Deferred Vulkan resource destruction
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Safely destroys Vulkan resources after frames in flight complete.
+ */
+
 #ifndef HVK_DEFERRED_DELETION_H
 #define HVK_DEFERRED_DELETION_H
 

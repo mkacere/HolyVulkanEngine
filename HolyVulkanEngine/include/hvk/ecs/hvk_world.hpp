@@ -1,3 +1,11 @@
+/**
+ * @file hvk_world.hpp
+ * @brief ECS world container
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Main ECS container managing entities, components, and systems.
+ */
+
 #ifndef HVK_ECS_WORLD_HPP
 #define HVK_ECS_WORLD_HPP
 

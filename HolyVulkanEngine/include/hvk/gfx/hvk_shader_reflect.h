@@ -1,3 +1,12 @@
+/**
+ * @file hvk_shader_reflect.h
+ * @brief SPIR-V shader reflection and pipeline layout generation
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Uses SPIRV-Reflect to automatically generate descriptor set layouts and
+ * pipeline layouts from compiled shader modules.
+ */
+
 #ifndef HVK_SHADER_REFLECT_H
 #define HVK_SHADER_REFLECT_H
 

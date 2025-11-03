@@ -1,3 +1,11 @@
+/**
+ * @file hvk_components.hpp
+ * @brief ECS component definitions
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Defines all component types used in the Entity Component System.
+ */
+
 #ifndef HVK_ECS_COMPONENTS_HPP
 #define HVK_ECS_COMPONENTS_HPP
 

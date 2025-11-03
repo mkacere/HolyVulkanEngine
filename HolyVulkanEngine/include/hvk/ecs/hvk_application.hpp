@@ -1,3 +1,11 @@
+/**
+ * @file hvk_application.hpp
+ * @brief ECS-based application framework
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * High-level application class integrating ECS, rendering, and input.
+ */
+
 #ifndef HVK_ECS_APPLICATION_HPP
 #define HVK_ECS_APPLICATION_HPP
 

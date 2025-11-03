@@ -1,3 +1,11 @@
+/**
+ * @file hvk_frustum.hpp
+ * @brief View frustum culling utilities
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Provides frustum extraction and AABB/sphere culling tests.
+ */
+
 #ifndef HVK_FRUSTUM_HPP
 #define HVK_FRUSTUM_HPP
 

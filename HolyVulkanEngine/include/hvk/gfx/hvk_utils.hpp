@@ -1,4 +1,13 @@
-﻿#ifndef HVK_UTILS
+﻿/**
+ * @file hvk_utils.hpp
+ * @brief Common Vulkan utility functions and helpers
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Provides SPIR-V loading, result checking macros, and other utility functions
+ * used throughout the engine.
+ */
+
+#ifndef HVK_UTILS
 #define HVK_UTILS
 
 #include <vulkan/vulkan.h>

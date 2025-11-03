@@ -1,3 +1,11 @@
+/**
+ * @file hvk_scene.hpp
+ * @brief ECS scene graph management
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Manages hierarchical scene graphs with transform propagation.
+ */
+
 #ifndef HVK_ECS_SCENE_HPP
 #define HVK_ECS_SCENE_HPP
 

@@ -1,3 +1,11 @@
+/**
+ * @file hvk_transform_system.hpp
+ * @brief Transform hierarchy system
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Updates world matrices from local transforms and parent relationships.
+ */
+
 #ifndef HVK_ECS_TRANSFORM_SYSTEM_HPP
 #define HVK_ECS_TRANSFORM_SYSTEM_HPP
 

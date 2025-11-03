@@ -1,3 +1,12 @@
+/**
+ * @file hvk_gpu_resources.h
+ * @brief GPU buffer and image resource management
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * RAII wrappers for VkBuffer and VkImage with VMA memory allocation,
+ * helper utilities, and descriptor info generation.
+ */
+
 #ifndef HVK_GPU_RESOURCES_H
 #define HVK_GPU_RESOURCES_H
 

@@ -1,3 +1,11 @@
+/**
+ * @file hvk_imgui_layer.hpp
+ * @brief Dear ImGui integration layer
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Vulkan backend for Dear ImGui with multi-viewport and docking support.
+ */
+
 #ifndef HVK_IMGUI_LAYER_HPP
 #define HVK_IMGUI_LAYER_HPP
 

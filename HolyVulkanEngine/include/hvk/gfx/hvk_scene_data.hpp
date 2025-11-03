@@ -1,3 +1,11 @@
+/**
+ * @file hvk_scene_data.hpp
+ * @brief Scene-wide rendering data structures
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Defines per-frame scene globals like ambient color, fog, and time.
+ */
+
 #ifndef HVK_SCENE_DATA_HPP
 #define HVK_SCENE_DATA_HPP
 

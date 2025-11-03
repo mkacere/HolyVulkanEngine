@@ -1,3 +1,11 @@
+/**
+ * @file ui.hpp
+ * @brief UI systems aggregate header
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Includes all UI-related headers.
+ */
+
 #pragma once
 //
 // hvk/ui.hpp

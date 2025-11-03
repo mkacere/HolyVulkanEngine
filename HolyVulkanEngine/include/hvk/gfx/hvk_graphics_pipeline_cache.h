@@ -1,3 +1,12 @@
+/**
+ * @file hvk_graphics_pipeline_cache.h
+ * @brief Graphics pipeline caching for dynamic rendering
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Caches VkPipeline objects based on shader stages, vertex input, rasterization,
+ * and render target formats to avoid redundant creation.
+ */
+
 #ifndef HVK_GRAPHICS_PIPELINE_CACHE_H
 #define HVK_GRAPHICS_PIPELINE_CACHE_H
 

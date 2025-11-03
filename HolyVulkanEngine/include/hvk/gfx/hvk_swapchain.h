@@ -1,3 +1,12 @@
+/**
+ * @file hvk_swapchain.h
+ * @brief Vulkan swapchain management and presentation
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * RAII wrapper for VkSwapchainKHR with automatic recreation on window resize,
+ * format selection, and present mode configuration.
+ */
+
 #ifndef HVK_SWAPCHAIN_H
 #define HVK_SWAPCHAIN_H
 

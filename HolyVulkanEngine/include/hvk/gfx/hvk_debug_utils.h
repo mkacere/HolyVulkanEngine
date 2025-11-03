@@ -1,3 +1,12 @@
+/**
+ * @file hvk_debug_utils.h
+ * @brief Vulkan debug utilities and labels
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Thin wrapper around VK_EXT_debug_utils for command buffer and queue labels
+ * with RAII scopes for structured debugging.
+ */
+
 #ifndef HVK_DEBUG_UTILS_H
 #define HVK_DEBUG_UTILS_H
 

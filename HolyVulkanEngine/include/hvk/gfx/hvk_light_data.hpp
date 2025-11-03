@@ -1,3 +1,11 @@
+/**
+ * @file hvk_light_data.hpp
+ * @brief Lighting uniform data structures
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Defines light buffer structures for point, directional, and spot lights.
+ */
+
 #ifndef HVK_LIGHT_DATA_HPP
 #define HVK_LIGHT_DATA_HPP
 

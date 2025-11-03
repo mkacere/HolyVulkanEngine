@@ -1,3 +1,12 @@
+/**
+ * @file hvk_gpu_profiler.h
+ * @brief GPU timestamp-based performance profiling
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Records GPU timestamp queries for named scopes and resolves them to
+ * millisecond timings for performance analysis.
+ */
+
 #ifndef HVK_GPU_PROFILER_H
 #define HVK_GPU_PROFILER_H
 
@@ -13,7 +22,7 @@ namespace hvk {
 
     struct GpuProfilerCreateInfo {
         const Device* device = nullptr;      // required
-        uint32_t      framesInFlight = 2;    // 2–3 typical
+        uint32_t      framesInFlight = 2;    // 2Â–3 typical
         uint32_t      queriesPerFrame = 256; // must fit 2*scopes + standalone stamps
         std::string   debugBaseName{};       // optional
     };

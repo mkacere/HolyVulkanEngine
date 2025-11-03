@@ -1,3 +1,13 @@
+/**
+ * @file hvk_pipeline_layout_cache.h
+ * @brief Pipeline layout caching and deduplication
+ * @author Holy Vulkan Engine
+ * @date 2025
+ *
+ * Caches VkPipelineLayout objects based on descriptor set layouts and push
+ * constant ranges to avoid duplicate creation and improve performance.
+ */
+
 #ifndef HVK_PIPELINE_LAYOUT_CACHE_H
 #define HVK_PIPELINE_LAYOUT_CACHE_H
 
@@ -11,7 +21,10 @@ namespace hvk {
 
     class Device; // fwd
 
-    // Small POD describing a layout request.
+    /**
+     * @struct PipelineLayoutDesc
+     * @brief Describes a pipeline layout request for caching
+     */
     struct PipelineLayoutDesc {
         std::vector<VkDescriptorSetLayout> setLayouts;       // order-sensitive
         std::vector<VkPushConstantRange>   pushConstants;    // optional

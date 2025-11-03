@@ -1,3 +1,13 @@
+/**
+ * @file hvk_command_pools.h
+ * @brief Vulkan command pool management and allocation
+ * @author Holy Vulkan Engine
+ * @date 2025
+ *
+ * Provides RAII wrappers for command pools, frame-ring command pools, and
+ * scoped command buffer allocation for one-time submissions.
+ */
+
 #ifndef HVK_COMMAND_POOLS_H
 #define HVK_COMMAND_POOLS_H
 
@@ -10,8 +20,10 @@ namespace hvk {
 
     class Device; // fwd
 
-    // --- CommandPool (RAII, move-only) ----------------------------------------
-
+    /**
+     * @struct CommandPoolCreateInfo
+     * @brief Configuration for creating a CommandPool
+     */
     struct CommandPoolCreateInfo {
         const Device* device = nullptr;                 // required
         uint32_t      queueFamilyIndex = 0;             // required
@@ -74,7 +86,7 @@ namespace hvk {
     struct CommandPoolRingCreateInfo {
         const Device* device = nullptr;                 // required
         uint32_t      queueFamilyIndex = 0;             // required
-        uint32_t      framesInFlight = 2;               // 2–3 recommended
+        uint32_t      framesInFlight = 2;               // 2ï¿½3 recommended
         VkCommandPoolCreateFlags flags =
             VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT |
             VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;

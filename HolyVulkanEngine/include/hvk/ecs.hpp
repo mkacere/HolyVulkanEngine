@@ -1,3 +1,11 @@
+/**
+ * @file ecs.hpp
+ * @brief ECS framework aggregate header
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Includes all ECS component, system, and world headers.
+ */
+
 #ifndef HVK_ECS_HPP
 #define HVK_ECS_HPP
 

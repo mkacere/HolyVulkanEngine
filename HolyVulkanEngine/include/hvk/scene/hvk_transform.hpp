@@ -1,3 +1,11 @@
+/**
+ * @file hvk_transform.hpp
+ * @brief 3D transform hierarchy
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Manages position, rotation, and scale transformations with matrix generation.
+ */
+
 #pragma once
 
 #define GLM_ENABLE_EXPERIMENTAL

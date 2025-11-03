@@ -1,3 +1,11 @@
+/**
+ * @file hvk_global_ubo.hpp
+ * @brief Global uniform buffer object definitions
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Defines structures for scene-wide uniform data shared across rendering systems.
+ */
+
 #ifndef HVK_GLOBAL_UBO_HPP
 #define HVK_GLOBAL_UBO_HPP
 

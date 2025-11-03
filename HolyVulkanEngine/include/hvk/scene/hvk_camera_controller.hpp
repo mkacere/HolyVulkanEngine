@@ -1,3 +1,11 @@
+/**
+ * @file hvk_camera_controller.hpp
+ * @brief FPS-style camera controller
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Provides WASD movement and mouse look controls for free-flying cameras.
+ */
+
 #ifndef HVK_CAMERA_CONTROLLER_HPP
 #define HVK_CAMERA_CONTROLLER_HPP
 

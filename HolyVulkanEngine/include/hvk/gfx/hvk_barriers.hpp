@@ -1,4 +1,12 @@
-﻿#ifndef HVK_BARRIERS_HPP
+﻿/**
+ * @file hvk_barriers.hpp
+ * @brief Vulkan pipeline barrier helpers
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Simplified barrier creation for image layout transitions and memory dependencies.
+ */
+
+#ifndef HVK_BARRIERS_HPP
 #define HVK_BARRIERS_HPP
 
 #include <vulkan/vulkan.h>

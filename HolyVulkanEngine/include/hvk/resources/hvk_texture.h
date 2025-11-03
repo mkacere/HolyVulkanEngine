@@ -1,3 +1,11 @@
+/**
+ * @file hvk_texture.h
+ * @brief Texture loading and management
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Handles texture creation from files or memory with automatic mipmap generation.
+ */
+
 #ifndef HVK_TEXTURE_H
 #define HVK_TEXTURE_H
 

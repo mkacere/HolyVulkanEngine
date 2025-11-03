@@ -1,4 +1,13 @@
-﻿#ifndef HVK_RENDER_GRAPH_H
+﻿/**
+ * @file hvk_render_graph.h
+ * @brief Frame graph for automatic rendering dependency management
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Manages render passes, resources, and automatic barrier insertion for
+ * frame-based rendering with dependency tracking.
+ */
+
+#ifndef HVK_RENDER_GRAPH_H
 #define HVK_RENDER_GRAPH_H
 
 #include <vulkan/vulkan.h>

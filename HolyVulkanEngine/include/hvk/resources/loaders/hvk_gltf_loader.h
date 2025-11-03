@@ -1,3 +1,11 @@
+/**
+ * @file hvk_gltf_loader.h
+ * @brief GLTF 2.0 file loader
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Loads GLTF/GLB files with PBR materials, textures, and scene hierarchy.
+ */
+
 #ifndef HVK_GLTF_LOADER_H
 #define HVK_GLTF_LOADER_H
 

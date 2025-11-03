@@ -1,3 +1,11 @@
+/**
+ * @file hvk_logic_system_adapter.hpp
+ * @brief Logic system adapter for ECS
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Adapts game logic systems to the ECS framework.
+ */
+
 #ifndef HVK_ECS_LOGIC_SYSTEM_ADAPTER_HPP
 #define HVK_ECS_LOGIC_SYSTEM_ADAPTER_HPP
 

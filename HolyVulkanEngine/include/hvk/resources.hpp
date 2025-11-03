@@ -1,3 +1,11 @@
+/**
+ * @file resources.hpp
+ * @brief Resource management aggregate header
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Includes all resource loading headers (models, textures, etc.).
+ */
+
 #pragma once
 
 // Texture loading

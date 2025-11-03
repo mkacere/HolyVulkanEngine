@@ -1,3 +1,11 @@
+/**
+ * @file hvk_primitives.h
+ * @brief Procedural primitive mesh generation
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Generates basic shapes like cubes, spheres, and planes.
+ */
+
 #ifndef HVK_PRIMITIVES_H
 #define HVK_PRIMITIVES_H
 

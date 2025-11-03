@@ -1,3 +1,10 @@
+/**
+ * @file hvk_input.hpp
+ * @brief Centralized input management system for keyboard and mouse input
+ * @author Holy Vulkan Engine
+ * @date 2025
+ */
+
 #ifndef HVK_INPUT_HPP
 #define HVK_INPUT_HPP
 

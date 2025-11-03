@@ -1,3 +1,11 @@
+/**
+ * @file hvk_system.hpp
+ * @brief Base ECS system interface
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Abstract base class for ECS systems that process components.
+ */
+
 #ifndef HVK_ECS_SYSTEM_HPP
 #define HVK_ECS_SYSTEM_HPP
 

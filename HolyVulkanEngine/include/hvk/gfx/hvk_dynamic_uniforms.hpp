@@ -1,3 +1,11 @@
+/**
+ * @file hvk_dynamic_uniforms.hpp
+ * @brief Dynamic uniform buffer management
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Manages dynamic uniform buffer offsets for per-object data in rendering.
+ */
+
 #ifndef HVK_DYNAMIC_UNIFORMS_HPP
 #define HVK_DYNAMIC_UNIFORMS_HPP
 
@@ -33,7 +41,7 @@ namespace hvk {
     // Creation parameters for DynamicUniforms.
     struct DynamicUniformsCreateInfo {
         const Device* device = nullptr;     // required
-        uint32_t      framesInFlight = 2;   // 2–3 recommended
+        uint32_t      framesInFlight = 2;   // 2Â–3 recommended
         VkDeviceSize  itemSize = 0;         // size of one struct before alignment (required)
         uint32_t      itemsPerFrame = 1024; // initial capacity (grows on demand at beginFrame)
         bool          allowGrow = true;     // allow growth at beginFrame if expectedItems > capacity

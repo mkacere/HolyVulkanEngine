@@ -1,3 +1,11 @@
+/**
+ * @file gfx.hpp
+ * @brief Graphics systems aggregate header
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Includes all graphics subsystem headers.
+ */
+
 #pragma once
 //
 // hvk/gfx.hpp

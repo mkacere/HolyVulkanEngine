@@ -1,3 +1,11 @@
+/**
+ * @file hvk_billboard_render_system.hpp
+ * @brief Billboard particle rendering system
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Renders view-aligned billboards for particles and sprites.
+ */
+
 #ifndef HVK_ECS_BILLBOARD_RENDER_SYSTEM_HPP
 #define HVK_ECS_BILLBOARD_RENDER_SYSTEM_HPP
 

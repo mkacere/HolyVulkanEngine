@@ -1,3 +1,11 @@
+/**
+ * @file hvk_cubemap.h
+ * @brief Cubemap texture support
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Handles cubemap creation and loading for skyboxes and environment mapping.
+ */
+
 #ifndef HVK_CUBEMAP_H
 #define HVK_CUBEMAP_H
 

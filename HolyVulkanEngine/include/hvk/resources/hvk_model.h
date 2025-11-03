@@ -1,3 +1,11 @@
+/**
+ * @file hvk_model.h
+ * @brief GLTF model representation
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Contains meshes, materials, textures, and scene hierarchy from GLTF files.
+ */
+
 #ifndef HVK_MODEL_H
 #define HVK_MODEL_H
 

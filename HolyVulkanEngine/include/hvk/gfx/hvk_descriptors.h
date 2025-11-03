@@ -1,3 +1,12 @@
+/**
+ * @file hvk_descriptors.h
+ * @brief Descriptor set management and allocation
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Provides descriptor set layouts, pool-based allocation with automatic growth,
+ * and bindless descriptor set utilities.
+ */
+
 #ifndef HVK_DESCRIPTORS_H
 #define HVK_DESCRIPTORS_H
 

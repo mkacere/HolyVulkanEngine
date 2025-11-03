@@ -1,3 +1,12 @@
+/**
+ * @file hvk_window.h
+ * @brief GLFW window wrapper with Vulkan surface creation
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Cross-platform window management with delta-time tracking, input handling,
+ * and Vulkan WSI helpers for surface creation.
+ */
+
 #ifndef HVK_WINDOW
 #define HVK_WINDOW
 

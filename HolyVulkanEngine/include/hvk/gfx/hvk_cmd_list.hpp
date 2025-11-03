@@ -1,4 +1,12 @@
-﻿#ifndef HVK_CMD_LIST_HPP
+﻿/**
+ * @file hvk_cmd_list.hpp
+ * @brief Command buffer wrapper with convenience methods
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Lightweight wrapper around VkCommandBuffer providing simplified recording APIs.
+ */
+
+#ifndef HVK_CMD_LIST_HPP
 #define HVK_CMD_LIST_HPP
 
 #include <vulkan/vulkan.h>

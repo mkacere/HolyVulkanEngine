@@ -1,3 +1,11 @@
+/**
+ * @file hvk_camera_data.hpp
+ * @brief Camera uniform data structures
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Defines camera matrices (view, projection, view-projection) for shaders.
+ */
+
 #ifndef HVK_CAMERA_DATA_HPP
 #define HVK_CAMERA_DATA_HPP
 

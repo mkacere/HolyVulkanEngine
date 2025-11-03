@@ -1,3 +1,11 @@
+/**
+ * @file hvk_material.h
+ * @brief PBR material system
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Defines physically-based rendering materials with texture support and parameters.
+ */
+
 #ifndef HVK_MATERIAL_H
 #define HVK_MATERIAL_H
 

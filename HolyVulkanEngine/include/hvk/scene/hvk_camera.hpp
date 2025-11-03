@@ -1,3 +1,11 @@
+/**
+ * @file hvk_camera.hpp
+ * @brief Camera projection and view matrix management
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Provides perspective and orthographic camera with Vulkan-style projection matrices.
+ */
+
 #ifndef HVK_CAMERA_HPP
 #define HVK_CAMERA_HPP
 

@@ -1,3 +1,11 @@
+/**
+ * @file hvk_mesh.h
+ * @brief Mesh data structures
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Defines vertex and index buffer data for rendering geometry.
+ */
+
 #ifndef HVK_MESH_H
 #define HVK_MESH_H
 

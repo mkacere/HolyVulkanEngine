@@ -1,3 +1,12 @@
+/**
+ * @file hvk_staging_uploader.h
+ * @brief Staging buffer management for GPU uploads
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Frame-ring staging buffer manager for efficiently uploading data to
+ * device-local GPU resources via transfer operations.
+ */
+
 #pragma once
 #ifndef HVK_STAGING_UPLOADER_HPP
 #define HVK_STAGING_UPLOADER_HPP
@@ -23,7 +32,7 @@ namespace hvk {
         const Device* device = nullptr;          // required
         VkQueue       queue = VK_NULL_HANDLE;    // upload queue (transfer preferred; gfx ok)
         uint32_t      queueFamilyIndex = 0;      // that queue's family index
-        uint32_t      framesInFlight = 2;        // 2–3 typical
+        uint32_t      framesInFlight = 2;        // 2Â–3 typical
         VkDeviceSize  bytesPerFrame = 32u * 1024u * 1024u; // 32 MB default
         std::string   debugBaseName = "staging";
     };

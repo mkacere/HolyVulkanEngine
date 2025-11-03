@@ -1,3 +1,11 @@
+/**
+ * @file hvk_global_descriptors.hpp
+ * @brief Global descriptor set management
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Manages Set 0 descriptors for scene, camera, and lighting data.
+ */
+
 #ifndef HVK_GLOBAL_DESCRIPTORS_HPP
 #define HVK_GLOBAL_DESCRIPTORS_HPP
 

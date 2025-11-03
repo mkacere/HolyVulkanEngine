@@ -1,3 +1,10 @@
+/**
+ * @file hvk_time.hpp
+ * @brief Global time management system with delta time and FPS tracking
+ * @author Holy Vulkan Engine
+ * @date 2025
+ */
+
 #ifndef HVK_TIME_HPP
 #define HVK_TIME_HPP
 

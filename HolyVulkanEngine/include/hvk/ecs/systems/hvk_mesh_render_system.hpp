@@ -1,3 +1,11 @@
+/**
+ * @file hvk_mesh_render_system.hpp
+ * @brief Mesh rendering system
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Renders meshes with materials using ECS component data.
+ */
+
 #ifndef HVK_ECS_MESH_RENDER_SYSTEM_HPP
 #define HVK_ECS_MESH_RENDER_SYSTEM_HPP
 

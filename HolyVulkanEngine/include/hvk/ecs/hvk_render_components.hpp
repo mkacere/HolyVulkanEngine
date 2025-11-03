@@ -1,3 +1,11 @@
+/**
+ * @file hvk_render_components.hpp
+ * @brief Rendering-specific ECS components
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Defines components for mesh rendering, materials, and visibility.
+ */
+
 #ifndef HVK_ECS_RENDER_COMPONENTS_HPP
 #define HVK_ECS_RENDER_COMPONENTS_HPP
 

@@ -1,3 +1,11 @@
+/**
+ * @file hvk_hierarchy_system.hpp
+ * @brief Scene hierarchy management system
+ * @author Holy Vulkan Engine
+ * @date 2025
+ * Manages parent-child relationships in the scene graph.
+ */
+
 #ifndef HVK_ECS_HIERARCHY_SYSTEM_HPP
 #define HVK_ECS_HIERARCHY_SYSTEM_HPP
 
