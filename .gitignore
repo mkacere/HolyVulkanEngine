@@ -12,7 +12,10 @@
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
-claude.md
+
+# Claude AI configuration and documentation
+CLAUDE.md
+.claude/
 
 # Mono auto generated files
 mono_crash.*
@@ -363,7 +366,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-.claude
 /nul
 
 # Assets (models, textures, etc.)
