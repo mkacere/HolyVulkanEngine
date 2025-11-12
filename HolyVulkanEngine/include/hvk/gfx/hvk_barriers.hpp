@@ -19,9 +19,9 @@ namespace hvk::barrier {
 
     // ----------------------------- small utils ----------------------------------
 
-    inline VkDeviceSize round_up(VkDeviceSize v, VkDeviceSize a) { return a ? (v + a - 1) & ~(a - 1) : v; }
+    constexpr VkDeviceSize round_up(VkDeviceSize v, VkDeviceSize a) { return a ? (v + a - 1) & ~(a - 1) : v; }
 
-    inline bool is_depth_format(VkFormat f) {
+    constexpr bool is_depth_format(VkFormat f) {
         switch (f) {
         case VK_FORMAT_D16_UNORM:
         case VK_FORMAT_X8_D24_UNORM_PACK32:
@@ -33,7 +33,7 @@ namespace hvk::barrier {
         default: return false;
         }
     }
-    inline bool is_stencil_format(VkFormat f) {
+    constexpr bool is_stencil_format(VkFormat f) {
         switch (f) {
         case VK_FORMAT_S8_UINT:
         case VK_FORMAT_D16_UNORM_S8_UINT:
@@ -44,7 +44,7 @@ namespace hvk::barrier {
         }
     }
 
-    inline VkImageAspectFlags aspect_from_format(VkFormat f) {
+    constexpr VkImageAspectFlags aspect_from_format(VkFormat f) {
         VkImageAspectFlags a = 0;
         if (is_depth_format(f))   a |= VK_IMAGE_ASPECT_DEPTH_BIT;
         if (is_stencil_format(f)) a |= VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -52,7 +52,7 @@ namespace hvk::barrier {
         return a;
     }
 
-    inline VkImageSubresourceRange full_range(VkImageAspectFlags aspect,
+    constexpr VkImageSubresourceRange full_range(VkImageAspectFlags aspect,
         uint32_t baseMip = 0, uint32_t mipCount = VK_REMAINING_MIP_LEVELS,
         uint32_t baseLayer = 0, uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS) {
         VkImageSubresourceRange r{};
@@ -82,7 +82,7 @@ namespace hvk::barrier {
     };
 
     // Defaults are conservative and work across graphics/compute
-    inline ImgUseInfo info_for(ImgUse u) {
+    constexpr inline ImgUseInfo info_for(ImgUse u) noexcept {
         switch (u) {
         case ImgUse::Undefined:
             return { VK_PIPELINE_STAGE_2_NONE, 0, VK_IMAGE_LAYOUT_UNDEFINED };

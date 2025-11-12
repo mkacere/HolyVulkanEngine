@@ -39,7 +39,7 @@ Texture loadTextureFromImage(
     SamplerCache& samplerCache,
     const tinygltf::Image& image,
     bool generateMips,
-    bool flipY,
+    bool /*flipY*/,  // Currently not used, kept for future Y-flip support
     bool useSRGB,  // true for color/albedo, false for data (normal, metallic-roughness, etc.)
     const std::string& name
 ) {
@@ -281,8 +281,7 @@ void loadMaterials(
                 float emissiveWhiteness = glm::length(emissiveVec - glm::vec3(1.0f, 1.0f, 1.0f));
 
                 // 7. Material name doesn't suggest it's actually emissive
-                std::string matNameLower = gltfMat.name;
-                std::transform(matNameLower.begin(), matNameLower.end(), matNameLower.begin(), ::tolower);
+                // Reuse matNameLower variable from line 191 (already lowercase)
                 bool hasEmissiveName = (matNameLower.find("emissive") != std::string::npos ||
                                         matNameLower.find("glow") != std::string::npos ||
                                         matNameLower.find("emit") != std::string::npos);

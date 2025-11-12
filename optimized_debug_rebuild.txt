@@ -1,0 +1,36 @@
+MSBuild version 17.14.23+b0019275e for .NET Framework
+
+MSBuild version 17.14.23+b0019275e for .NET Framework
+
+  Checking File Globs
+  1>Checking Build System
+  Compiling shader: billboard.frag -> billboard.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/billboard.frag
+  Compiling shader: billboard.vert -> billboard.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/billboard.vert
+  Compiling shader: model.frag -> model.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/model.frag
+  Compiling shader: model.vert -> model.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/model.vert
+  Compiling shader: quad.frag -> quad.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/quad.frag
+  Compiling shader: quad.vert -> quad.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/quad.vert
+  Compiling shader: skybox.frag -> skybox.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/skybox.frag
+  Compiling shader: skybox.vert -> skybox.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/skybox.vert
+  Compiling shader: skybox_equirect.frag -> skybox_equirect.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/skybox_equirect.frag
+  Compiling shader: tri.frag -> tri.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/tri.frag
+  Compiling shader: tri.vert -> tri.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/tri.vert
+  Compiling shader: triangle.frag -> triangle.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/triangle.frag
+  Compiling shader: triangle.vert -> triangle.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/triangle.vert
+  Building Custom Rule C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/CMakeLists.txt
+  Building SPIR-V shaders
+  Building Custom Rule C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/HolyVulkanEngine/external/glfw/src/CMakeLists.txt
+cl : command line  error D8016: '/O2' and '/RTC1' command-line options are incompatible [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\external\glfw\src\glfw.vcxproj]

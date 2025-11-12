@@ -44,7 +44,7 @@ namespace hvk {
 
     // ========================= Helpers ===========================================
 
-    static VkDescriptorType map_desc_type(uint32_t spv_reflect_desc_type) {
+    [[maybe_unused]] static VkDescriptorType map_desc_type([[maybe_unused]] uint32_t spv_reflect_desc_type) {
 #if defined(HVK_USE_SPIRV_REFLECT)
         switch (spv_reflect_desc_type) {
         case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER:                return VK_DESCRIPTOR_TYPE_SAMPLER;
@@ -63,7 +63,7 @@ namespace hvk {
         return VK_DESCRIPTOR_TYPE_MAX_ENUM;
     }
 
-    static VkFormat map_vertex_format(uint32_t spv_format) {
+    [[maybe_unused]] static VkFormat map_vertex_format([[maybe_unused]] uint32_t spv_format) {
 #if defined(HVK_USE_SPIRV_REFLECT)
         switch (spv_format) {
         case SPV_REFLECT_FORMAT_R32_SFLOAT:          return VK_FORMAT_R32_SFLOAT;
@@ -182,7 +182,7 @@ namespace hvk {
         for (auto& b : list) {
             if (b.binding == in.binding && b.set == in.set) {
                 b.stages |= in.stages;
-                // Prefer the largest count in case stages disagree (shouldn’t happen in valid SPIR-V)
+                // Prefer the largest count in case stages disagree (shouldnï¿½t happen in valid SPIR-V)
                 b.count = std::max(b.count, in.count);
                 b.runtimeArray = b.runtimeArray || in.runtimeArray;
                 return;
@@ -262,7 +262,7 @@ namespace hvk {
                 }
                 else if (rb.runtimeArray) {
                     // If runtime array and no explicit override, suggest VARIABLE_DESCRIPTOR_COUNT
-                    // (engine may choose to not use bindless — then leave as 1).
+                    // (engine may choose to not use bindless ï¿½ then leave as 1).
                     // We default to no special flag unless user opted-in via overrides.
                 }
                 flags.push_back(bf);

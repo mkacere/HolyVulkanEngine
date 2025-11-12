@@ -60,7 +60,7 @@ struct CameraData {
     uint32_t  _pad1;
 
     // Default constructor
-    CameraData()
+    constexpr CameraData() noexcept
         : view(1.0f)
         , projection(1.0f)
         , viewProjection(1.0f)
@@ -177,21 +177,21 @@ struct CameraData {
     /**
      * Get the right vector (X axis in camera space)
      */
-    glm::vec3 getRightVector() const {
+    constexpr glm::vec3 getRightVector() const noexcept {
         return glm::vec3(invView[0].x, invView[0].y, invView[0].z);
     }
 
     /**
      * Get the up vector (Y axis in camera space)
      */
-    glm::vec3 getUpVector() const {
+    constexpr glm::vec3 getUpVector() const noexcept {
         return glm::vec3(invView[1].x, invView[1].y, invView[1].z);
     }
 
     /**
      * Get the forward vector (negative Z axis in camera space)
      */
-    glm::vec3 getForwardVector() const {
+    constexpr glm::vec3 getForwardVector() const noexcept {
         return glm::vec3(direction.x, direction.y, direction.z);
     }
 };

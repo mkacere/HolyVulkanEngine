@@ -17,6 +17,7 @@ target_compile_definitions(HVKEngine PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
 target_include_directories(HVKEngine
     PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include
+    SYSTEM PUBLIC  # Mark external libraries as system headers (suppresses warnings)
         ${CMAKE_CURRENT_LIST_DIR}/external/glm
         ${CMAKE_CURRENT_LIST_DIR}/external/stb
         ${CMAKE_CURRENT_LIST_DIR}/external/tinygltf
@@ -42,6 +43,32 @@ target_precompile_headers(HVKEngine
   PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_LIST_DIR}/src/pch.h>
 )
+
+# -----------------------------
+# Engine-Specific Optimizations
+# -----------------------------
+# Always optimize the engine library for performance testing
+# Users can still debug demos with -Od, but the engine itself is fast
+if(MSVC)
+    target_compile_options(HVKEngine PRIVATE
+        # Debug config: optimized with debug symbols
+        $<$<CONFIG:Debug>:/O2>          # Optimize for speed
+        $<$<CONFIG:Debug>:/Oi>          # Enable intrinsic functions
+        $<$<CONFIG:Debug>:/Ob2>         # Inline any suitable function
+        $<$<CONFIG:Debug>:/fp:fast>     # Fast floating-point model
+        # Note: Removes /RTC1 runtime checks for performance
+
+        # Release config: maximum optimization
+        $<$<CONFIG:Release>:/Gw>        # Global data optimization
+    )
+else()
+    target_compile_options(HVKEngine PRIVATE
+        # Debug config: moderate optimization with debug symbols
+        $<$<CONFIG:Debug>:-O2>              # Moderate optimization
+        $<$<CONFIG:Debug>:-ffast-math>      # Fast floating-point math
+        $<$<CONFIG:Debug>:-fno-omit-frame-pointer>  # Keep frame pointers for debugging
+    )
+endif()
 
 # Prefer system GLFW; fall back to vendored external/glfw if present
 find_package(glfw3 QUIET)  # provides target 'glfw' on most setups

@@ -295,7 +295,7 @@ void MeshRenderSystem::render(Scene& scene, CmdList& cmd) {
         float distSq = glm::distance2(cameraPosition, entityPos);
 
         // OPTIMIZATION: Distance-based culling (skip objects too far away)
-        if (distSq > MAX_RENDER_DISTANCE_SQ) {
+        if (distSq > MAX_RENDER_DISTANCE_SQ) [[unlikely]] {
             continue;
         }
 
@@ -339,7 +339,7 @@ void MeshRenderSystem::render(Scene& scene, CmdList& cmd) {
     // Sort back-to-front for correct transparency
 
     std::sort(blendedBatch.begin(), blendedBatch.end(),
-        [](const RenderBatch& a, const RenderBatch& b) {
+        [](const RenderBatch& a, const RenderBatch& b) noexcept {
             return a.distanceFromCamera > b.distanceFromCamera;  // Farthest first
         });
 

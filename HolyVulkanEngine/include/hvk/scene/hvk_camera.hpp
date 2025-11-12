@@ -82,10 +82,10 @@ public:
     // --- Position and Orientation ---
 
     void setPosition(const glm::vec3& pos) { position_ = pos; updateViewMatrix(); }
-    const glm::vec3& position() const { return position_; }
+    constexpr const glm::vec3& position() const noexcept { return position_; }
 
     void setRotation(const glm::quat& rot) { rotation_ = rot; updateViewMatrix(); }
-    const glm::quat& rotation() const { return rotation_; }
+    constexpr const glm::quat& rotation() const noexcept { return rotation_; }
 
     /**
      * Set camera orientation by specifying look-at target and up direction
@@ -120,22 +120,22 @@ public:
     // --- Projection Parameters ---
 
     void setProjectionType(ProjectionType type) { projectionType_ = type; updateProjectionMatrix(); }
-    ProjectionType projectionType() const { return projectionType_; }
+    constexpr ProjectionType projectionType() const noexcept { return projectionType_; }
 
     void setFovY(float fovYDegrees) { fovY_ = fovYDegrees; updateProjectionMatrix(); }
-    float fovY() const { return fovY_; }
+    constexpr float fovY() const noexcept { return fovY_; }
 
     void setAspectRatio(float aspect) { aspectRatio_ = aspect; updateProjectionMatrix(); }
-    float aspectRatio() const { return aspectRatio_; }
+    constexpr float aspectRatio() const noexcept { return aspectRatio_; }
 
     void setNearPlane(float nearPlane) { nearPlane_ = nearPlane; updateProjectionMatrix(); }
-    float nearPlane() const { return nearPlane_; }
+    constexpr float nearPlane() const noexcept { return nearPlane_; }
 
     void setFarPlane(float farPlane) { farPlane_ = farPlane; updateProjectionMatrix(); }
-    float farPlane() const { return farPlane_; }
+    constexpr float farPlane() const noexcept { return farPlane_; }
 
     void setOrthoWidth(float width) { orthoWidth_ = width; updateProjectionMatrix(); }
-    float orthoWidth() const { return orthoWidth_; }
+    constexpr float orthoWidth() const noexcept { return orthoWidth_; }
 
     /**
      * Update aspect ratio (typically called on window resize)
@@ -150,9 +150,9 @@ public:
 
     // --- Matrices ---
 
-    const glm::mat4& viewMatrix() const { return viewMatrix_; }
-    const glm::mat4& projectionMatrix() const { return projectionMatrix_; }
-    glm::mat4 viewProjectionMatrix() const { return projectionMatrix_ * viewMatrix_; }
+    constexpr const glm::mat4& viewMatrix() const noexcept { return viewMatrix_; }
+    constexpr const glm::mat4& projectionMatrix() const noexcept { return projectionMatrix_; }
+    constexpr glm::mat4 viewProjectionMatrix() const noexcept { return projectionMatrix_ * viewMatrix_; }
 
     // --- CameraData Population ---
 

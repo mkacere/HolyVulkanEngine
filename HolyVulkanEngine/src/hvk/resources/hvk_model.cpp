@@ -251,7 +251,7 @@ void Model::drawMasked(
 void Model::drawBlended(
     CmdList& cmd,
     VkPipelineLayout pipelineLayout,
-    VkDescriptorSet globalDescSet,
+    VkDescriptorSet /*globalDescSet*/,  // Already bound by MeshRenderSystem
     const glm::vec3& cameraPosition,
     const glm::mat4& modelTransform
 ) const {

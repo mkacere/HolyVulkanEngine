@@ -176,12 +176,15 @@ namespace hvk {
 
         ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
 
+#ifdef IMGUI_HAS_VIEWPORT
         // Update and render additional platform windows (multi-viewport support)
+        // Note: This feature is only available in the 'docking' branch of ImGui
         ImGuiIO& io = ImGui::GetIO();
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
         }
+#endif
     }
 
     void ImGuiLayer::onResize(uint32_t width, uint32_t height) {
@@ -236,17 +239,29 @@ namespace hvk {
             ownedContext_ = true;
         }
 
+#if defined(IMGUI_HAS_DOCK) || defined(IMGUI_HAS_VIEWPORT)
         ImGuiIO& io = ImGui::GetIO();
+#endif
 
+#ifdef IMGUI_HAS_DOCK
         // Enable docking if requested
+        // Note: This feature is only available in the 'docking' branch of ImGui
         if (ci.enableDocking) {
             io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         }
+#else
+        (void)ci.enableDocking; // Suppress unused parameter warning
+#endif
 
+#ifdef IMGUI_HAS_VIEWPORT
         // Enable multi-viewport if requested (experimental)
+        // Note: This feature is only available in the 'docking' branch of ImGui
         if (ci.enableViewports) {
             io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
         }
+#else
+        (void)ci.enableViewports; // Suppress unused parameter warning
+#endif
 
         // Setup style
         setup_imgui_style();

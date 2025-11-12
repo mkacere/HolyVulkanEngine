@@ -22,7 +22,7 @@ namespace hvk {
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT sev,
-        VkDebugUtilsMessageTypeFlagsEXT        type,
+        VkDebugUtilsMessageTypeFlagsEXT        /*type*/,
         const VkDebugUtilsMessengerCallbackDataEXT* data,
         void*)
     {
@@ -141,7 +141,7 @@ namespace hvk {
 
     // ----- instance & debug -----
 
-    void Device::createInstance(const Window& window, const DeviceCreateInfo& ci) {
+    void Device::createInstance(const Window& /*window*/, const DeviceCreateInfo& ci) {
         // enumerate layers/exts
         uint32_t lc = 0; vkEnumerateInstanceLayerProperties(&lc, nullptr);
         std::vector<VkLayerProperties> layers(lc); if (lc) vkEnumerateInstanceLayerProperties(&lc, layers.data());
@@ -289,7 +289,7 @@ namespace hvk {
         return score;
     }
 
-    void Device::pickPhysicalDevice(const DeviceCreateInfo& ci) {
+    void Device::pickPhysicalDevice(const DeviceCreateInfo& /*ci*/) {
         uint32_t n = 0; vkEnumeratePhysicalDevices(instance_, &n, nullptr);
         if (!n) throw std::runtime_error("No Vulkan physical devices found.");
         std::vector<VkPhysicalDevice> pds(n); vkEnumeratePhysicalDevices(instance_, &n, pds.data());

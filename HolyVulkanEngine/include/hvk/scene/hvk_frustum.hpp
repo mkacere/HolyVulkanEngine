@@ -190,12 +190,12 @@ public:
             if (plane.normal.z >= 0) nVertex.z = aabb.min.z;
 
             // If positive vertex is outside, AABB is completely outside
-            if (plane.signedDistance(pVertex) < 0) {
+            if (plane.signedDistance(pVertex) < 0) [[unlikely]] {
                 return Outside;
             }
 
             // If negative vertex is outside, AABB intersects plane
-            if (plane.signedDistance(nVertex) < 0) {
+            if (plane.signedDistance(nVertex) < 0) [[unlikely]] {
                 result = Intersect;
             }
         }
@@ -246,9 +246,9 @@ public:
      * @param point Point to test
      * @return true if point is inside frustum
      */
-    bool testPoint(const glm::vec3& point) const {
+    [[nodiscard]] inline bool testPoint(const glm::vec3& point) const noexcept {
         for (const auto& plane : planes_) {
-            if (plane.signedDistance(point) < 0) {
+            if (plane.signedDistance(point) < 0) [[unlikely]] {
                 return false;
             }
         }

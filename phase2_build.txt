@@ -1,0 +1,63 @@
+MSBuild version 17.14.23+b0019275e for .NET Framework
+
+  Checking File Globs
+  Building SPIR-V shaders
+  glfw.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\lib\Debug\glfw3.lib
+  hvk_application.cpp
+  hvk_logic_system_adapter.cpp
+  hvk_resource_manager.cpp
+  hvk_scene.cpp
+  hvk_billboard_render_system.cpp
+  hvk_mesh_render_system.cpp
+  hvk_global_descriptors.cpp
+  hvk_gpu_resources.cpp
+  hvk_render_graph.cpp
+  hvk_cubemap.cpp
+  hvk_material.cpp
+  hvk_mesh.cpp
+  hvk_model.cpp
+  hvk_texture.cpp
+  hvk_gltf_loader.cpp
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\src\hvk\gfx\hvk_render_graph.cpp(266,31): error C2248: 'hvk::ImageView::destroy': cannot access private member declared in class 'hvk::ImageView' [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_render_graph.cpp')
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_gpu_resources.h(151,14):
+      see declaration of 'hvk::ImageView::destroy'
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_gpu_resources.h(138,11):
+      see declaration of 'hvk::ImageView'
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\src\hvk\gfx\hvk_render_graph.cpp(267,32): error C2248: 'hvk::GpuImage::destroy': cannot access private member declared in class 'hvk::GpuImage' [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_render_graph.cpp')
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_gpu_resources.h(226,14):
+      see declaration of 'hvk::GpuImage::destroy'
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_gpu_resources.h(181,11):
+      see declaration of 'hvk::GpuImage'
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\src\hvk\gfx\hvk_global_descriptors.cpp(85,32): error C2653: 'PerFrame': is not a class or namespace name [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_global_descriptors.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\src\hvk\gfx\hvk_global_descriptors.cpp(86,1): fatal  error C1907: unable to recover from previous error(s); stopping compilation [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  INTERNAL COMPILER ERROR in 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\CL.exe'
+      Please choose the Technical Support command on the Visual C++
+      Help menu, or open the Technical Support help file for more information
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\src\hvk\ecs\systems\hvk_billboard_render_system.cpp(411,23): error C2248: 'hvk::GpuBuffer::destroy': cannot access private member declared in class 'hvk::GpuBuffer' [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/ecs/systems/hvk_billboard_render_system.cpp')
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_gpu_resources.h(116,14):
+      see declaration of 'hvk::GpuBuffer::destroy'
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_gpu_resources.h(81,11):
+      see declaration of 'hvk::GpuBuffer'
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\src\hvk\ecs\systems\hvk_billboard_render_system.cpp(412,22): error C2248: 'hvk::GpuBuffer::destroy': cannot access private member declared in class 'hvk::GpuBuffer' [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/ecs/systems/hvk_billboard_render_system.cpp')
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_gpu_resources.h(116,14):
+      see declaration of 'hvk::GpuBuffer::destroy'
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_gpu_resources.h(81,11):
+      see declaration of 'hvk::GpuBuffer'
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\src\hvk\ecs\systems\hvk_billboard_render_system.cpp(413,21): error C2248: 'hvk::GpuBuffer::destroy': cannot access private member declared in class 'hvk::GpuBuffer' [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/ecs/systems/hvk_billboard_render_system.cpp')
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_gpu_resources.h(116,14):
+      see declaration of 'hvk::GpuBuffer::destroy'
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_gpu_resources.h(81,11):
+      see declaration of 'hvk::GpuBuffer'
+  
+cl : command line  error D8040: error creating or communicating with child process [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]

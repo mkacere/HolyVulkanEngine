@@ -89,15 +89,48 @@ public:
     }
 };
 
+// ============================================================================
+// Descriptor binding traits (compile-time binding specification)
+// ============================================================================
+
+/**
+ * @brief Compile-time descriptor binding information
+ *
+ * Specializations define binding index and descriptor type for each data type.
+ * This ensures type-safe descriptor writes with compile-time binding validation.
+ */
+template<typename DataT> struct DescriptorBinding;
+
+template<> struct DescriptorBinding<SceneData> {
+    static constexpr uint32_t binding = 0;
+    static constexpr VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+};
+
+template<> struct DescriptorBinding<CameraData> {
+    static constexpr uint32_t binding = 1;
+    static constexpr VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+};
+
+template<> struct DescriptorBinding<LightBuffer> {
+    static constexpr uint32_t binding = 2;
+    static constexpr VkDescriptorType type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+};
+
+// ============================================================================
+
 /**
  * GlobalDescriptorWriter - Helper for writing Set 0 descriptors
  *
+ * Now with template-based type-safe writes using compile-time binding traits!
+ *
  * Usage:
  *   GlobalDescriptorWriter writer;
- *   writer.writeSceneData(descSet, sceneBuffer, 0);
- *   writer.writeCameraData(descSet, cameraBuffer, 0);
- *   writer.writeLightBuffer(descSet, lightBuffer, 0);
+ *   writer.write<SceneData>(descSet, sceneBuffer);     // NEW: Type-safe!
+ *   writer.write<CameraData>(descSet, cameraBuffer);   // NEW: Type-safe!
+ *   writer.write<LightBuffer>(descSet, lightBuffer);   // NEW: Type-safe!
  *   writer.commit(device);
+ *
+ * Legacy methods also available: writeSceneData(), writeCameraData(), writeLightBuffer()
  */
 class GlobalDescriptorWriter {
 public:
@@ -176,6 +209,45 @@ public:
         bufferInfos_.push_back(bufferInfo);
         writes_.push_back(write);
         writes_.back().pBufferInfo = &bufferInfos_.back();
+    }
+
+    /**
+     * @brief Template-based type-safe descriptor write (NEW & RECOMMENDED)
+     *
+     * Uses compile-time binding traits for type safety and clarity.
+     * Wrong binding? Compile error! No runtime overhead.
+     *
+     * @tparam DataT Data type (SceneData, CameraData, or LightBuffer)
+     * @param set Descriptor set to write to
+     * @param buffer Buffer containing data
+     * @param offset Offset in buffer
+     * @param range Size of data (defaults to sizeof(DataT) or VK_WHOLE_SIZE for LightBuffer)
+     *
+     * Example:
+     *   writer.write<SceneData>(set, sceneBuffer);
+     *   writer.write<CameraData>(set, cameraBuffer);
+     */
+    template<typename DataT>
+    void write(VkDescriptorSet set, VkBuffer buffer,
+               VkDeviceSize offset = 0,
+               VkDeviceSize range = 0) {
+        // Auto-deduce range if not specified
+        if (range == 0) {
+            range = std::is_same_v<DataT, LightBuffer> ? VK_WHOLE_SIZE : sizeof(DataT);
+        }
+
+        VkDescriptorBufferInfo bufferInfo{buffer, offset, range};
+        bufferInfos_.push_back(bufferInfo);
+
+        VkWriteDescriptorSet write{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+        write.dstSet = set;
+        write.dstBinding = DescriptorBinding<DataT>::binding;  // Compile-time binding!
+        write.dstArrayElement = 0;
+        write.descriptorType = DescriptorBinding<DataT>::type; // Compile-time type!
+        write.descriptorCount = 1;
+        write.pBufferInfo = &bufferInfos_.back();
+
+        writes_.push_back(write);
     }
 
     /**

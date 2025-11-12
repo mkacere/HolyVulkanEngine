@@ -263,8 +263,9 @@ namespace hvk {
     void RenderGraph::destroyCurrentFrameResources() {
         for (auto& img : images_) {
             if (!img.isExternal) {
-                img.ownedView.destroy();
-                img.ownedImage.destroy();
+                // RAII handles cleanup automatically via move-assignment
+                img.ownedView = ImageView{};
+                img.ownedImage = GpuImage{};
                 img.image = VK_NULL_HANDLE;
                 img.view = VK_NULL_HANDLE;
                 img.lastUse = hvk::barrier::ImgUse::Undefined;

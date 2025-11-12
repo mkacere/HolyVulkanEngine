@@ -245,7 +245,7 @@ int main() {
 
         // Position camera at a distance proportional to model size
         // Distance formula: ensure the model fits in view with some padding
-        constexpr float fovRadians = glm::radians(60.0f);
+        float fovRadians = glm::radians(60.0f);
         float distance = (modelDiagonal * 0.5f) / glm::tan(fovRadians * 0.5f) * 1.5f;  // 1.5x for padding
 
         // Position camera: offset from origin (since model is centered at 0,0,0)
@@ -869,11 +869,11 @@ int main() {
                     std::cout << "  - World center: (" << modelCenter.x << ", " << modelCenter.y << ", " << modelCenter.z << ")" << std::endl;
 
                     // Update camera to fit new model bounds (model is centered at origin)
-                    glm::vec3 modelSize = bounds.max - bounds.min;
-                    float modelDiagonal = glm::length(modelSize);
-                    float fovRadians = glm::radians(60.0f);
-                    float distance = (modelDiagonal * 0.5f) / glm::tan(fovRadians * 0.5f) * 1.5f;
-                    glm::vec3 cameraOffset = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f)) * distance;
+                    modelSize = bounds.max - bounds.min;
+                    modelDiagonal = glm::length(modelSize);
+                    fovRadians = glm::radians(60.0f);
+                    distance = (modelDiagonal * 0.5f) / glm::tan(fovRadians * 0.5f) * 1.5f;
+                    cameraOffset = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f)) * distance;
                     glm::vec3 newCamPos = cameraOffset;  // Position relative to origin
 
                     camera.setPosition(newCamPos);

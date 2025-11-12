@@ -154,29 +154,29 @@ namespace hvk {
         }
 
         // Accessors (current frame)
-        VkBuffer     buffer()       const { return perFrame_[cur_].buffer; }
-        void* mappedBase()   const { return perFrame_[cur_].mapped; }
-        uint32_t     usedItems()    const { return perFrame_[cur_].headIndex; }
-        uint32_t     capacityItems()const { return capacityItems(cur_); }
-        VkDeviceSize stride()       const { return stride_; }
+        [[nodiscard]] constexpr VkBuffer     buffer()       const noexcept { return perFrame_[cur_].buffer; }
+        [[nodiscard]] constexpr void* mappedBase()   const noexcept { return perFrame_[cur_].mapped; }
+        [[nodiscard]] constexpr uint32_t     usedItems()    const noexcept { return perFrame_[cur_].headIndex; }
+        [[nodiscard]] constexpr uint32_t     capacityItems()const noexcept { return capacityItems(cur_); }
+        [[nodiscard]] constexpr VkDeviceSize stride()       const noexcept { return stride_; }
 
         // Descriptor info for binding this as UNIFORM_BUFFER(_DYNAMIC).
         // Use this in your descriptor writes; range = stride (one item).
-        VkDescriptorBufferInfo descriptorInfo() const {
-            VkDescriptorBufferInfo info{};
-            info.buffer = buffer();
-            info.offset = 0;            // dynamic offset supplies the per-draw offset
-            info.range = stride_;      // size of one item
-            return info;
+        [[nodiscard]] inline constexpr VkDescriptorBufferInfo descriptorInfo() const noexcept {
+            return VkDescriptorBufferInfo{
+                buffer(),
+                0,              // dynamic offset supplies the per-draw offset
+                stride_         // size of one item
+            };
         }
 
         // Compute dynamic offset for a previously allocated slice (or an index).
-        VkDeviceSize dynamicOffset(uint32_t index) const { return static_cast<VkDeviceSize>(index) * stride_; }
-        VkDeviceSize dynamicOffset(const DynSlice& s) const { return s.offset; }
+        [[nodiscard]] constexpr VkDeviceSize dynamicOffset(uint32_t index) const noexcept { return static_cast<VkDeviceSize>(index) * stride_; }
+        [[nodiscard]] constexpr VkDeviceSize dynamicOffset(const DynSlice& s) const noexcept { return s.offset; }
 
         // Frame-meta
-        uint32_t framesInFlight() const { return frames_; }
-        uint32_t currentFrame()   const { return cur_; }
+        [[nodiscard]] constexpr uint32_t framesInFlight() const noexcept { return frames_; }
+        [[nodiscard]] constexpr uint32_t currentFrame()   const noexcept { return cur_; }
 
         // Destroy all buffers (call automatically on dtor).
         void destroy() {
@@ -203,7 +203,7 @@ namespace hvk {
             uint32_t      headIndex = 0;   // bump index (items used this frame)
         };
 
-        uint32_t capacityItems(uint32_t frame) const {
+        constexpr uint32_t capacityItems(uint32_t frame) const noexcept {
             return static_cast<uint32_t>(perFrame_[frame].size / stride_);
         }
 

@@ -18,6 +18,7 @@
 #include <algorithm>
 
 #include "hvk_device.h"
+#include "hvk_raii.hpp"
 
 #if !ENGINE_USE_VMA
 #error "GpuBuffer/GpuImage require VMA (ENGINE_USE_VMA=1)."
@@ -28,14 +29,14 @@ namespace hvk {
 
     // ----------------------------- helpers --------------------------------------
 
-    inline uint32_t hvk_calc_mip_count(uint32_t w, uint32_t h, uint32_t d = 1) {
+    constexpr uint32_t hvk_calc_mip_count(uint32_t w, uint32_t h, uint32_t d = 1) {
         const uint32_t m = (std::max)({ w, h, d });
         uint32_t levels = 0, t = m;
         while (t > 0) { t >>= 1; ++levels; }
         return (std::max)(1u, levels);
     }
 
-    inline VkImageSubresourceRange hvk_full_range(VkImageAspectFlags aspect,
+    constexpr VkImageSubresourceRange hvk_full_range(VkImageAspectFlags aspect,
         uint32_t levels, uint32_t layers,
         uint32_t baseMip = 0, uint32_t baseLayer = 0) {
         VkImageSubresourceRange r{};
@@ -47,7 +48,7 @@ namespace hvk {
         return r;
     }
 
-    inline VkImageAspectFlags hvk_aspect_from_format(VkFormat fmt) {
+    constexpr VkImageAspectFlags hvk_aspect_from_format(VkFormat fmt) {
         switch (fmt) {
         case VK_FORMAT_D16_UNORM:
         case VK_FORMAT_X8_D24_UNORM_PACK32:
@@ -77,50 +78,49 @@ namespace hvk {
         std::string debugName{};
     };
 
-    class GpuBuffer {
+    class GpuBuffer : public VulkanResource<GpuBuffer> {
+        friend class VulkanResource<GpuBuffer>;
     public:
         GpuBuffer() = default;
         explicit GpuBuffer(const GpuBufferCreateInfo& ci) { create(ci); }
-        ~GpuBuffer() { destroy(); }
 
-        GpuBuffer(const GpuBuffer&) = delete;
-        GpuBuffer& operator=(const GpuBuffer&) = delete;
-
+        // Move operations (explicit to properly handle CRTP)
         GpuBuffer(GpuBuffer&& o) noexcept { move_from(std::move(o)); }
-        GpuBuffer& operator=(GpuBuffer&& o) noexcept { if (this != &o) { destroy(); move_from(std::move(o)); } return *this; }
+        GpuBuffer& operator=(GpuBuffer&& o) noexcept {
+            if (this != &o) { destroy(); move_from(std::move(o)); }
+            return *this;
+        }
 
         void create(const GpuBufferCreateInfo& ci);
-        void destroy();
 
         // info
-        VkBuffer      handle() const { return buf_; }
-        VmaAllocation allocation() const { return alloc_; }
-        VkDeviceSize  size() const { return size_; }
-        VkBufferUsageFlags usage() const { return usage_; }
-        const Device* device() const { return device_; }
+        [[nodiscard]] constexpr VkBuffer      handle() const noexcept { return buf_; }
+        [[nodiscard]] constexpr VmaAllocation allocation() const noexcept { return alloc_; }
+        [[nodiscard]] constexpr VkDeviceSize  size() const noexcept { return size_; }
+        [[nodiscard]] constexpr VkBufferUsageFlags usage() const noexcept { return usage_; }
+        [[nodiscard]] constexpr const Device* device() const noexcept { return device_; }
 
         // map/unmap (persistent suggested)
         void* map();                 // returns persisted pointer if already mapped
         void  unmap();               // keeps valid even if called multiple times
-        void* mapped() const { return mapped_; }
+        [[nodiscard]] constexpr void* mapped() const noexcept { return mapped_; }
 
         // flush/invalidate ranges (safe on coherent = no-op in VMA)
         void flush(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
         void invalidate(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
 
         // descriptor helper
-        VkDescriptorBufferInfo descriptor(VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE) const {
-            VkDescriptorBufferInfo info{ buf_, offset, range };
-            return info;
+        [[nodiscard]] inline constexpr VkDescriptorBufferInfo descriptor(VkDeviceSize offset = 0, VkDeviceSize range = VK_WHOLE_SIZE) const noexcept {
+            return VkDescriptorBufferInfo{ buf_, offset, range };
         }
 
         // device address (0 if BDA not enabled/usage missing)
         VkDeviceAddress deviceAddress() const;
 
     private:
+        // RAII implementation (called by VulkanResource<GpuBuffer>)
+        void destroy();
         void move_from(GpuBuffer&& o) noexcept;
-
-    private:
         const Device* device_ = nullptr;
         VkBuffer       buf_ = VK_NULL_HANDLE;
         VmaAllocation  alloc_ = VK_NULL_HANDLE;
@@ -141,28 +141,28 @@ namespace hvk {
         std::string debugName{};
     };
 
-    class ImageView {
+    class ImageView : public VulkanResource<ImageView> {
+        friend class VulkanResource<ImageView>;
     public:
         ImageView() = default;
         explicit ImageView(const ImageViewCreateInfo& ci) { create(ci); }
-        ~ImageView() { destroy(); }
 
-        ImageView(const ImageView&) = delete;
-        ImageView& operator=(const ImageView&) = delete;
-
+        // Move operations (explicit to properly handle CRTP)
         ImageView(ImageView&& o) noexcept { move_from(std::move(o)); }
-        ImageView& operator=(ImageView&& o) noexcept { if (this != &o) { destroy(); move_from(std::move(o)); } return *this; }
+        ImageView& operator=(ImageView&& o) noexcept {
+            if (this != &o) { destroy(); move_from(std::move(o)); }
+            return *this;
+        }
 
         void create(const ImageViewCreateInfo& ci);
-        void destroy();
 
         VkImageView handle() const { return view_; }
         const Device* device() const { return device_; }
 
     private:
+        // RAII implementation (called by VulkanResource<ImageView>)
+        void destroy();
         void move_from(ImageView&& o) noexcept;
-
-    private:
         const Device* device_ = nullptr;
         VkImageView   view_ = VK_NULL_HANDLE;
     };
@@ -191,36 +191,36 @@ namespace hvk {
         std::string debugName{};
     };
 
-    class GpuImage {
+    class GpuImage : public VulkanResource<GpuImage> {
+        friend class VulkanResource<GpuImage>;
     public:
         GpuImage() = default;
         explicit GpuImage(const GpuImageCreateInfo& ci) { create(ci); }
-        ~GpuImage() { destroy(); }
 
-        GpuImage(const GpuImage&) = delete;
-        GpuImage& operator=(const GpuImage&) = delete;
-
+        // Move operations (explicit to properly handle CRTP)
         GpuImage(GpuImage&& o) noexcept { move_from(std::move(o)); }
-        GpuImage& operator=(GpuImage&& o) noexcept { if (this != &o) { destroy(); move_from(std::move(o)); } return *this; }
+        GpuImage& operator=(GpuImage&& o) noexcept {
+            if (this != &o) { destroy(); move_from(std::move(o)); }
+            return *this;
+        }
 
         void create(const GpuImageCreateInfo& ci);
-        void destroy();
 
         // info
-        VkImage     handle() const { return img_; }
-        VmaAllocation allocation() const { return alloc_; }
-        VkFormat    format() const { return format_; }
-        VkExtent3D  extent() const { return { width_, height_, depth_ }; }
-        uint32_t    width() const { return width_; }
-        uint32_t    height() const { return height_; }
-        uint32_t    depth() const { return depth_; }
-        uint32_t    mipLevels() const { return mipLevels_; }
-        uint32_t    arrayLayers() const { return arrayLayers_; }
-        VkSampleCountFlagBits samples() const { return samples_; }
-        const Device* device() const { return device_; }
+        [[nodiscard]] constexpr VkImage     handle() const noexcept { return img_; }
+        [[nodiscard]] constexpr VmaAllocation allocation() const noexcept { return alloc_; }
+        [[nodiscard]] constexpr VkFormat    format() const noexcept { return format_; }
+        [[nodiscard]] constexpr VkExtent3D  extent() const noexcept { return { width_, height_, depth_ }; }
+        [[nodiscard]] constexpr uint32_t    width() const noexcept { return width_; }
+        [[nodiscard]] constexpr uint32_t    height() const noexcept { return height_; }
+        [[nodiscard]] constexpr uint32_t    depth() const noexcept { return depth_; }
+        [[nodiscard]] constexpr uint32_t    mipLevels() const noexcept { return mipLevels_; }
+        [[nodiscard]] constexpr uint32_t    arrayLayers() const noexcept { return arrayLayers_; }
+        [[nodiscard]] constexpr VkSampleCountFlagBits samples() const noexcept { return samples_; }
+        [[nodiscard]] constexpr const Device* device() const noexcept { return device_; }
 
         // helpers
-        VkImageSubresourceRange fullRange() const {
+        [[nodiscard]] inline constexpr VkImageSubresourceRange fullRange() const noexcept {
             return hvk_full_range(hvk_aspect_from_format(format_), mipLevels_, arrayLayers_);
         }
 
@@ -242,9 +242,9 @@ namespace hvk {
         }
 
     private:
+        // RAII implementation (called by VulkanResource<GpuImage>)
+        void destroy();
         void move_from(GpuImage&& o) noexcept;
-
-    private:
         const Device* device_ = nullptr;
         VkImage       img_ = VK_NULL_HANDLE;
         VmaAllocation alloc_ = VK_NULL_HANDLE;

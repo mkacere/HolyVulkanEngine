@@ -6,7 +6,7 @@
 
 namespace hvk {
 
-void CameraSystem::update(entt::registry& registry, float deltaTime) {
+void CameraSystem::update(entt::registry& registry, float /*deltaTime*/) {
     
 
     // Iterate all cameras (CameraComponent + TransformComponent)

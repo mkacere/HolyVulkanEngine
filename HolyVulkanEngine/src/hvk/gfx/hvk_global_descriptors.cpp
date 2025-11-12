@@ -84,12 +84,10 @@ void GlobalDescriptorSet::updateScene(uint32_t frameIndex, const SceneData& data
     if (frameIndex >= perFrame_.size()) {
         throw std::out_of_range("GlobalDescriptorSet::updateScene: frameIndex out of range");
     }
-
     PerFrame& pf = perFrame_[frameIndex];
     if (!pf.sceneMapped) {
         throw std::runtime_error("GlobalDescriptorSet::updateScene: buffer not mapped");
     }
-
     std::memcpy(pf.sceneMapped, &data, sizeof(SceneData));
 }
 
@@ -97,12 +95,10 @@ void GlobalDescriptorSet::updateCamera(uint32_t frameIndex, const CameraData& da
     if (frameIndex >= perFrame_.size()) {
         throw std::out_of_range("GlobalDescriptorSet::updateCamera: frameIndex out of range");
     }
-
     PerFrame& pf = perFrame_[frameIndex];
     if (!pf.cameraMapped) {
         throw std::runtime_error("GlobalDescriptorSet::updateCamera: buffer not mapped");
     }
-
     std::memcpy(pf.cameraMapped, &data, sizeof(CameraData));
 }
 

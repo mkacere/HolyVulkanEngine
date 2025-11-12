@@ -1,0 +1,218 @@
+MSBuild version 17.14.23+b0019275e for .NET Framework
+
+MSBuild version 17.14.23+b0019275e for .NET Framework
+
+  Checking File Globs
+  1>Checking Build System
+  Compiling shader: billboard.frag -> billboard.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/billboard.frag
+  Compiling shader: billboard.vert -> billboard.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/billboard.vert
+  Compiling shader: model.frag -> model.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/model.frag
+  Compiling shader: model.vert -> model.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/model.vert
+  Compiling shader: quad.frag -> quad.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/quad.frag
+  Compiling shader: quad.vert -> quad.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/quad.vert
+  Compiling shader: skybox.frag -> skybox.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/skybox.frag
+  Compiling shader: skybox.vert -> skybox.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/skybox.vert
+  Compiling shader: skybox_equirect.frag -> skybox_equirect.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/skybox_equirect.frag
+  Compiling shader: tri.frag -> tri.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/tri.frag
+  Compiling shader: tri.vert -> tri.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/tri.vert
+  Compiling shader: triangle.frag -> triangle.frag.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/triangle.frag
+  Compiling shader: triangle.vert -> triangle.vert.spv
+  C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/shaders/triangle.vert
+  Building Custom Rule C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/CMakeLists.txt
+  Building SPIR-V shaders
+  Building Custom Rule C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/HolyVulkanEngine/external/glfw/src/CMakeLists.txt
+  context.c
+  init.c
+  input.c
+  monitor.c
+  platform.c
+  vulkan.c
+  window.c
+  egl_context.c
+  osmesa_context.c
+  null_init.c
+  null_monitor.c
+  null_window.c
+  null_joystick.c
+  win32_module.c
+  win32_time.c
+  win32_thread.c
+  win32_init.c
+  win32_joystick.c
+  win32_monitor.c
+  win32_window.c
+  wgl_context.c
+  glfw.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\lib\Debug\glfw3.lib
+  Building Custom Rule C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/HolyVulkanEngine/CMakeLists.txt
+  cmake_pch.cxx
+  imgui.cpp
+  imgui_demo.cpp
+  imgui_draw.cpp
+  imgui_tables.cpp
+  imgui_widgets.cpp
+  imgui_impl_glfw.cpp
+  imgui_impl_vulkan.cpp
+  hvk_input.cpp
+  hvk_time.cpp
+  hvk_command_pools.cpp
+  hvk_debug_utils.cpp
+  hvk_descriptors.cpp
+  hvk_device.cpp
+  hvk_frame_sync.cpp
+  hvk_global_descriptors.cpp
+  hvk_gpu_profiler.cpp
+  hvk_gpu_resources.cpp
+  hvk_graphics_pipeline_cache.cpp
+  hvk_pipeline_layout_cache.cpp
+  hvk_render_graph.cpp
+  hvk_sampler_cache.cpp
+  hvk_shader_reflect.cpp
+  hvk_staging_uploader.cpp
+  hvk_swapchain.cpp
+  hvk_vma_impl.cpp
+  hvk_window.cpp
+  hvk_cubemap.cpp
+  hvk_material.cpp
+  hvk_mesh.cpp
+  hvk_model.cpp
+  hvk_texture.cpp
+  hvk_gltf_loader.cpp
+  hvk_camera.cpp
+  hvk_camera_controller.cpp
+  hvk_imgui_layer.cpp
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(3946,58): warning C4100: 'offset': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(3946,38): warning C4100: 'pData': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(3960,67): warning C4100: 'offset': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(3960,47): warning C4100: 'pData': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(6582,35): warning C4100: 'hAllocator': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(6978,77): warning C4100: 'size': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(6978,56): warning C4100: 'offset': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(6990,21): warning C4189: 'name': local variable is initialized but not referenced [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+  hvk_application.cpp
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(8512,74): warning C4100: 'prevAlloc': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(8519,76): warning C4100: 'alloc': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(8711,14): warning C4100: 'strategy': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(8889,14): warning C4100: 'strategy': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(9520,26): warning C4100: 'type': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(10827,57): warning C4100: 'hAllocator': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+  hvk_logic_system_adapter.cpp
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(13338,61): warning C4100: 'pCreateInfo': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(15356,72): warning C4100: 'pattern': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(15356,51): warning C4100: 'hAllocation': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+  hvk_resource_manager.cpp
+  hvk_scene.cpp
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(16567,31): warning C4100: 'allocator': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(16581,31): warning C4100: 'allocator': unreferenced parameter [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(4986,1): warning C4324: 'VmaPoolAllocator<VmaBlockMetadata_TLSF::Block>::Item': structure was padded due to alignment specifier [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(4986,1):
+      the template instantiation context (the oldest one first) is
+          C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(9156,36):
+          see reference to function template instantiation 'T *VmaPoolAllocator<T>::Alloc<>(void)' being compiled
+          with
+          [
+              T=VmaBlockMetadata_TLSF::Block
+          ]
+              C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(9156,17):
+              see the first reference to 'VmaPoolAllocator<VmaBlockMetadata_TLSF::Block>::Alloc' in 'VmaBlockMetadata_TLSF::Init'
+          C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(4983,11):
+          while compiling class 'VmaPoolAllocator<VmaBlockMetadata_TLSF::Block>::Item'
+  
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(4986,1): warning C4324: 'VmaPoolAllocator<VmaAllocation_T>::Item': structure was padded due to alignment specifier [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_vma_impl.cpp')
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(4986,1):
+      the template instantiation context (the oldest one first) is
+          C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(10278,39):
+          see reference to class template instantiation 'VmaPoolAllocator<VmaAllocation_T>' being compiled
+          C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(5014,1):
+          while compiling class template member function 'VmaPoolAllocator<VmaAllocation_T>::~VmaPoolAllocator(void)'
+              C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(10271,22):
+              see the first reference to 'VmaPoolAllocator<VmaAllocation_T>::~VmaPoolAllocator' in 'VmaAllocationObjectAllocator::VmaAllocationObjectAllocator'
+          C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\external\VulkanMemoryAllocator\include\vk_mem_alloc.h(4983,11):
+          while compiling class 'VmaPoolAllocator<VmaAllocation_T>::Item'
+  
+  hvk_world.cpp
+  hvk_billboard_render_system.cpp
+  hvk_camera_system.cpp
+  hvk_hierarchy_system.cpp
+  hvk_mesh_render_system.cpp
+  hvk_transform_system.cpp
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\src\hvk\gfx\hvk_window.cpp(65,11): warning C4459: declaration of 'PROCESS_POWER_THROTTLING_STATE' hides global declaration [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\HolyVulkanEngine\HVKEngine.vcxproj]
+  (compiling source file '../../../HolyVulkanEngine/src/hvk/gfx/hvk_window.cpp')
+      C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um\processthreadsapi.h(1229,3):
+      see declaration of 'PROCESS_POWER_THROTTLING_STATE'
+  
+  HVKEngine.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\lib\Debug\HVKEngine.lib
+  Building Custom Rule C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/app/CMakeLists.txt
+  ecs_demo.cpp
+  ECSDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\ECSDemo.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
+  Building Custom Rule C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/app/CMakeLists.txt
+  grid_demo.cpp
+  GridDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\GridDemo.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
+  Building Custom Rule C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/app/CMakeLists.txt
+  main.cpp
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\app\main.cpp(874,21): error C3892: 'fovRadians': you cannot assign to a variable that is const [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\app\HVKApp.vcxproj]
+  Building Custom Rule C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/app/CMakeLists.txt
+  primitives_demo.cpp
+  PrimitivesDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\PrimitivesDemo.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
+  Building Custom Rule C:/Users/mkace/OneDrive/Documents/HolyVulkanEngineWorkSpace/app/CMakeLists.txt
+  skybox_demo.cpp
+  SkyboxDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\SkyboxDemo.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.

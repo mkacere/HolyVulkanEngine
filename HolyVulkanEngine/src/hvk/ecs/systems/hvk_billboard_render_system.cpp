@@ -407,10 +407,10 @@ void BillboardRenderSystem::cleanup() {
 
     VkDevice dev = device_->device();
 
-    // Destroy buffers
-    quadVertexBuffer_.destroy();
-    quadIndexBuffer_.destroy();
-    instanceBuffer_.destroy();
+    // Destroy buffers (RAII handles cleanup automatically via move-assignment to empty buffer)
+    quadVertexBuffer_ = GpuBuffer{};
+    quadIndexBuffer_ = GpuBuffer{};
+    instanceBuffer_ = GpuBuffer{};
 
     // Destroy pipelines (managed by cache, just null handles)
     alphaPipeline_ = VK_NULL_HANDLE;

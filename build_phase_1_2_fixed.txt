@@ -1,0 +1,23 @@
+MSBuild version 17.14.23+b0019275e for .NET Framework
+
+  Checking File Globs
+  Building SPIR-V shaders
+  glfw.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\lib\Debug\glfw3.lib
+  HVKEngine.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\lib\Debug\HVKEngine.lib
+  ECSDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\ECSDemo.exe
+  grid_demo.cpp
+  GridDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\GridDemo.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
+  main.cpp
+  HVKApp.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\HVKApp.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
+  primitives_demo.cpp
+  PrimitivesDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\PrimitivesDemo.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
+  skybox_demo.cpp
+  SkyboxDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\SkyboxDemo.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.

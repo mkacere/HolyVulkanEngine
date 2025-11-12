@@ -76,7 +76,7 @@ int main() {
             // Load a central model (parent)
             std::cout << "  Loading central parent model..." << std::endl;
             auto centerModel = scene.spawnModel(
-                std::string(PROJECT_ROOT) + "/assets/models/kawashaki_ninja_h2.glb",
+                std::string(PROJECT_ROOT) + "/assets/models/miku.glb",
                 //std::string(PROJECT_ROOT) + "/assets/models/medieval_arcade.glb",
                 glm::vec3(0.0f, 0.0f, 0.0f)
             );
@@ -106,7 +106,7 @@ int main() {
 
                 // Spawn smaller models as children
                 auto childModel = scene.spawnModel(
-                    std::string(PROJECT_ROOT) + "/assets/models/crystar_kokoro_fudoji.glb",
+                    std::string(PROJECT_ROOT) + "/assets/models/miku_walking.glb",
                     localPos
                 );
 
@@ -191,7 +191,7 @@ int main() {
         });
 
         // ImGui window for info
-        app.onImGui([](Application& app) {
+        app.onImGui([](Application& /*app*/) {
             ImGui::Begin("ECS Demo - Flight Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
             ImGui::Text("Holy Vulkan Engine - ECS Architecture");
             ImGui::Separator();

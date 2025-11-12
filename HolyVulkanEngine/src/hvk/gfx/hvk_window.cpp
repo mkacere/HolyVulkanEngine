@@ -58,13 +58,13 @@ namespace hvk {
 
 #if defined(_WIN32)
     static void SetProcessPowerThrottle(bool disable) {
+        // Define only if not already defined by Windows SDK
+#ifndef PROCESS_POWER_THROTTLING_CURRENT_VERSION
         typedef struct _PROCESS_POWER_THROTTLING_STATE {
             ULONG Version;
             ULONG ControlMask;
             ULONG StateMask;
         } PROCESS_POWER_THROTTLING_STATE;
-
-#ifndef PROCESS_POWER_THROTTLING_CURRENT_VERSION
 #define PROCESS_POWER_THROTTLING_CURRENT_VERSION 1
 #endif
 #ifndef PROCESS_POWER_THROTTLING_EXECUTION_SPEED

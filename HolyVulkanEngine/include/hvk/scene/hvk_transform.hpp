@@ -47,25 +47,25 @@ public:
     // Position
     // ========================================================================
 
-    const glm::vec3& position() const { return position_; }
-    void setPosition(const glm::vec3& pos) { position_ = pos; dirty_ = true; }
+    constexpr const glm::vec3& position() const noexcept { return position_; }
+    void setPosition(const glm::vec3& pos) noexcept { position_ = pos; dirty_ = true; }
 
-    void translate(const glm::vec3& delta) { position_ += delta; dirty_ = true; }
+    void translate(const glm::vec3& delta) noexcept { position_ += delta; dirty_ = true; }
 
-    float x() const { return position_.x; }
-    float y() const { return position_.y; }
-    float z() const { return position_.z; }
+    constexpr float x() const noexcept { return position_.x; }
+    constexpr float y() const noexcept { return position_.y; }
+    constexpr float z() const noexcept { return position_.z; }
 
-    void setX(float x) { position_.x = x; dirty_ = true; }
-    void setY(float y) { position_.y = y; dirty_ = true; }
-    void setZ(float z) { position_.z = z; dirty_ = true; }
+    void setX(float x) noexcept { position_.x = x; dirty_ = true; }
+    void setY(float y) noexcept { position_.y = y; dirty_ = true; }
+    void setZ(float z) noexcept { position_.z = z; dirty_ = true; }
 
     // ========================================================================
     // Rotation (Quaternion)
     // ========================================================================
 
-    const glm::quat& rotation() const { return rotation_; }
-    void setRotation(const glm::quat& rot) { rotation_ = rot; dirty_ = true; }
+    constexpr const glm::quat& rotation() const noexcept { return rotation_; }
+    void setRotation(const glm::quat& rot) noexcept { rotation_ = rot; dirty_ = true; }
 
     // Set rotation from Euler angles (in radians)
     void setEulerAngles(const glm::vec3& eulerRadians) {
@@ -120,29 +120,29 @@ public:
     // Scale
     // ========================================================================
 
-    const glm::vec3& scale() const { return scale_; }
-    void setScale(const glm::vec3& s) { scale_ = s; dirty_ = true; }
-    void setScale(float uniformScale) { scale_ = glm::vec3(uniformScale); dirty_ = true; }
+    constexpr const glm::vec3& scale() const noexcept { return scale_; }
+    void setScale(const glm::vec3& s) noexcept { scale_ = s; dirty_ = true; }
+    void setScale(float uniformScale) noexcept { scale_ = glm::vec3(uniformScale); dirty_ = true; }
 
-    void scaleBy(const glm::vec3& factor) { scale_ *= factor; dirty_ = true; }
-    void scaleBy(float factor) { scale_ *= factor; dirty_ = true; }
+    void scaleBy(const glm::vec3& factor) noexcept { scale_ *= factor; dirty_ = true; }
+    void scaleBy(float factor) noexcept { scale_ *= factor; dirty_ = true; }
 
     // ========================================================================
     // Direction Vectors
     // ========================================================================
 
     // Get forward vector (object's local -Z axis in world space)
-    glm::vec3 forward() const {
+    [[nodiscard]] inline glm::vec3 forward() const noexcept {
         return rotation_ * glm::vec3(0, 0, -1);
     }
 
     // Get right vector (object's local +X axis in world space)
-    glm::vec3 right() const {
+    [[nodiscard]] inline glm::vec3 right() const noexcept {
         return rotation_ * glm::vec3(1, 0, 0);
     }
 
     // Get up vector (object's local +Y axis in world space)
-    glm::vec3 up() const {
+    [[nodiscard]] inline glm::vec3 up() const noexcept {
         return rotation_ * glm::vec3(0, 1, 0);
     }
 
@@ -151,7 +151,7 @@ public:
     // ========================================================================
 
     // Get the final transformation matrix (TRS order: Translate * Rotate * Scale)
-    const glm::mat4& matrix() const {
+    [[nodiscard]] inline const glm::mat4& matrix() const noexcept {
         if (dirty_) {
             updateMatrix();
         }
@@ -205,7 +205,7 @@ public:
     // ========================================================================
 
     // Linear interpolation between two transforms
-    static Transform lerp(const Transform& a, const Transform& b, float t) {
+    [[nodiscard]] static inline Transform lerp(const Transform& a, const Transform& b, float t) noexcept {
         Transform result;
         result.position_ = glm::mix(a.position_, b.position_, t);
         result.rotation_ = glm::slerp(a.rotation_, b.rotation_, t); // spherical interpolation
@@ -215,7 +215,7 @@ public:
     }
 
     // Smooth interpolation (hermite)
-    static Transform smoothstep(const Transform& a, const Transform& b, float t) {
+    [[nodiscard]] static inline Transform smoothstep(const Transform& a, const Transform& b, float t) noexcept {
         float smooth = t * t * (3.0f - 2.0f * t);
         return lerp(a, b, smooth);
     }
@@ -232,7 +232,7 @@ public:
     }
 
 private:
-    void updateMatrix() const {
+    inline void updateMatrix() const noexcept {
         // TRS order: Translate * Rotate * Scale
         glm::mat4 T = glm::translate(glm::mat4(1.0f), position_);
         glm::mat4 R = glm::mat4_cast(rotation_);

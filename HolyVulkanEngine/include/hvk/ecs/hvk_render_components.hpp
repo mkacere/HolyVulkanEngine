@@ -45,8 +45,8 @@ struct LocalToWorld {
     glm::mat4 matrix{1.0f};       // Local-to-world transform
     glm::mat4 normalMatrix{1.0f}; // For transforming normals (inverse transpose)
 
-    LocalToWorld() = default;
-    explicit LocalToWorld(const glm::mat4& m, const glm::mat4& n = glm::mat4(1.0f))
+    constexpr LocalToWorld() = default;
+    explicit constexpr LocalToWorld(const glm::mat4& m, const glm::mat4& n = glm::mat4(1.0f)) noexcept
         : matrix(m), normalMatrix(n) {}
 };
 
@@ -72,7 +72,7 @@ struct RenderCamera {
     // Format: vec4(A, B, C, D) where Ax + By + Cz + D = 0
     glm::vec4 frustumPlanes[6];
 
-    RenderCamera() = default;
+    constexpr RenderCamera() = default;
 };
 
 // ============================================================================
@@ -103,7 +103,7 @@ struct RenderMesh {
     // Sort key for render queue optimization (material, depth, etc.)
     uint64_t sortKey = 0;
 
-    RenderMesh() = default;
+    constexpr RenderMesh() = default;
 };
 
 // ============================================================================
@@ -126,7 +126,7 @@ struct RenderPointLight {
     glm::vec3 color{1.0f};
     float intensity = 0.0f;
 
-    RenderPointLight() = default;
+    constexpr RenderPointLight() = default;
 };
 
 struct RenderDirectionalLight {
@@ -136,7 +136,7 @@ struct RenderDirectionalLight {
     glm::vec3 color{1.0f};
     float intensity = 0.0f;
 
-    RenderDirectionalLight() = default;
+    constexpr RenderDirectionalLight() = default;
 };
 
 struct RenderSpotLight {
@@ -149,7 +149,7 @@ struct RenderSpotLight {
     glm::vec3 color{1.0f};
     float outerConeAngle = 0.0f;
 
-    RenderSpotLight() = default;
+    constexpr RenderSpotLight() = default;
 };
 
 // ============================================================================

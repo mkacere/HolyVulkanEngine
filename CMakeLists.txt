@@ -1,10 +1,74 @@
 ﻿cmake_minimum_required(VERSION 3.16)
-project(HVKWorkspace LANGUAGES CXX)
+project(HVKWorkspace LANGUAGES C CXX)
 
 # Global C++ config
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# -----------------------------
+# Optimal Compiler Flags
+# -----------------------------
+if(MSVC)
+    # MSVC optimizations
+    add_compile_options(
+        /W4                     # High warning level
+        /permissive-            # Strict standards conformance
+        /Zc:__cplusplus         # Enable updated __cplusplus macro
+        /Zc:inline              # Remove unreferenced functions/data
+        /Zc:throwingNew         # Assume operator new throws on failure
+        /MP                     # Multi-processor compilation
+        /bigobj                 # Large object files for templates
+    )
+
+    # Suppress warnings from external libraries (MSVC 2017+)
+    add_compile_options(
+        /external:W0            # Warning level 0 for external headers
+        /external:anglebrackets # Treat angle-bracket includes as external
+    )
+
+    # Release optimizations (maximum performance)
+    add_compile_options(
+        $<$<CONFIG:Release>:/O2>        # Maximum optimization (speed)
+        $<$<CONFIG:Release>:/Oi>        # Enable intrinsic functions
+        $<$<CONFIG:Release>:/Ot>        # Favor fast code
+        $<$<CONFIG:Release>:/GL>        # Whole program optimization
+        $<$<CONFIG:Release>:/Gy>        # Function-level linking
+        $<$<CONFIG:Release>:/fp:fast>   # Fast floating-point model
+    )
+
+    # Release linker flags
+    add_link_options(
+        $<$<CONFIG:Release>:/LTCG>      # Link-time code generation
+        $<$<CONFIG:Release>:/OPT:REF>   # Eliminate unreferenced functions
+        $<$<CONFIG:Release>:/OPT:ICF>   # Identical COMDAT folding
+    )
+
+    # Debug flags (demos use default CMake Debug settings)
+    add_compile_options(
+        $<$<CONFIG:Debug>:/Zi>          # Full debug info (PDB)
+    )
+else()
+    # GCC/Clang optimizations
+    add_compile_options(
+        -Wall                   # Enable most warnings
+        -pedantic               # Strict ISO C++ compliance
+    )
+
+    # Release optimizations (maximum performance)
+    add_compile_options(
+        $<$<CONFIG:Release>:-O3>            # Maximum optimization
+        $<$<CONFIG:Release>:-march=native>  # Optimize for current CPU
+        $<$<CONFIG:Release>:-flto>          # Link-time optimization
+        $<$<CONFIG:Release>:-ffast-math>    # Fast floating-point math
+        $<$<CONFIG:Release>:-funroll-loops> # Unroll loops
+    )
+
+    # Debug flags (demos use default CMake Debug settings)
+    add_compile_options(
+        $<$<CONFIG:Debug>:-g>               # Debug symbols
+    )
+endif()
 
 # Output directories (good defaults)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

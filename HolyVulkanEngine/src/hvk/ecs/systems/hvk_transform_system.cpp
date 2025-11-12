@@ -5,7 +5,7 @@
 
 namespace hvk {
 
-void TransformSystem::update(entt::registry& registry, float deltaTime) {
+void TransformSystem::update(entt::registry& registry, float /*deltaTime*/) {
     // Process all entities with TransformComponent
     // EnTT's view provides cache-friendly iteration
     auto view = registry.view<TransformComponent>();

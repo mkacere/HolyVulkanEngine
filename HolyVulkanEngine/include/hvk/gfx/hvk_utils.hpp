@@ -90,12 +90,24 @@ namespace hvk {
         );
     }
 
-    // hashCombine helper unchanged…
+    // Improved hash combine with constexpr support
     template <typename T, typename... Rest>
-    void hashCombine(std::size_t& seed, const T& v, const Rest&... rest) {
+    constexpr void hashCombine(std::size_t& seed, const T& v, const Rest&... rest) {
         seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        (hashCombine(seed, rest), ...);
-    };
+        if constexpr (sizeof...(rest) > 0) {
+            (hashCombine(seed, rest), ...);
+        }
+    }
+
+    // Functional version that returns a hash value
+    template <typename... Args>
+    constexpr std::size_t makeHash(const Args&... args) {
+        std::size_t seed = 0;
+        if constexpr (sizeof...(args) > 0) {
+            (hashCombine(seed, args), ...);
+        }
+        return seed;
+    }
 }
 
 #endif // HVK_UTILS

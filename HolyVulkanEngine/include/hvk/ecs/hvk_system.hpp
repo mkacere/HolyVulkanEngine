@@ -45,7 +45,7 @@ public:
      *
      * @param scene Parent scene
      */
-    virtual void init(Scene& scene) {}
+    virtual void init(Scene& /*scene*/) {}
 
     /**
      * Update system (logic, transforms, physics, etc.)
@@ -55,7 +55,7 @@ public:
      * @param scene Parent scene
      * @param deltaTime Time since last update (seconds)
      */
-    virtual void update(Scene& scene, float deltaTime) {}
+    virtual void update(Scene& /*scene*/, float /*deltaTime*/) {}
 
     /**
      * Render system (draw calls, GPU commands)
@@ -65,7 +65,7 @@ public:
      * @param scene Parent scene
      * @param cmd Command list
      */
-    virtual void render(Scene& scene, CmdList& cmd) {}
+    virtual void render(Scene& /*scene*/, CmdList& /*cmd*/) {}
 
     /**
      * Cleanup system

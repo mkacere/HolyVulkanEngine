@@ -1,0 +1,61 @@
+MSBuild version 17.14.23+b0019275e for .NET Framework
+
+  Checking File Globs
+  Building SPIR-V shaders
+  glfw.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\lib\Debug\glfw3.lib
+  hvk_application.cpp
+  hvk_logic_system_adapter.cpp
+  hvk_resource_manager.cpp
+  hvk_scene.cpp
+  hvk_world.cpp
+  hvk_billboard_render_system.cpp
+  hvk_camera_system.cpp
+  hvk_hierarchy_system.cpp
+  hvk_mesh_render_system.cpp
+  hvk_transform_system.cpp
+  hvk_global_descriptors.cpp
+  hvk_gpu_resources.cpp
+  hvk_render_graph.cpp
+  hvk_cubemap.cpp
+  hvk_material.cpp
+  hvk_mesh.cpp
+  hvk_model.cpp
+  hvk_texture.cpp
+  hvk_gltf_loader.cpp
+  HVKEngine.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\lib\Debug\HVKEngine.lib
+  ecs_demo.cpp
+  ECSDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\ECSDemo.exe
+  'pwsh.exe' is not recognized as an internal or external command,
+  operable program or batch file.
+  grid_demo.cpp
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,46): error C3615: constexpr function 'hvk::DynamicUniforms::capacityItems' cannot result in a constant expression [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\app\GridDemo.vcxproj]
+  (compiling source file '../../../app/grid_demo.cpp')
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,98):
+      failure was caused by call of undefined function or one not declared 'constexpr'
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,98):
+      see usage of 'hvk::DynamicUniforms::capacityItems'
+  
+  main.cpp
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,46): error C3615: constexpr function 'hvk::DynamicUniforms::capacityItems' cannot result in a constant expression [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\app\HVKApp.vcxproj]
+  (compiling source file '../../../app/main.cpp')
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,98):
+      failure was caused by call of undefined function or one not declared 'constexpr'
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,98):
+      see usage of 'hvk::DynamicUniforms::capacityItems'
+  
+  primitives_demo.cpp
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,46): error C3615: constexpr function 'hvk::DynamicUniforms::capacityItems' cannot result in a constant expression [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\app\PrimitivesDemo.vcxproj]
+  (compiling source file '../../../app/primitives_demo.cpp')
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,98):
+      failure was caused by call of undefined function or one not declared 'constexpr'
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,98):
+      see usage of 'hvk::DynamicUniforms::capacityItems'
+  
+  skybox_demo.cpp
+C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,46): error C3615: constexpr function 'hvk::DynamicUniforms::capacityItems' cannot result in a constant expression [C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\app\SkyboxDemo.vcxproj]
+  (compiling source file '../../../app/skybox_demo.cpp')
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,98):
+      failure was caused by call of undefined function or one not declared 'constexpr'
+      C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\HolyVulkanEngine\include\hvk\gfx\hvk_dynamic_uniforms.hpp(160,98):
+      see usage of 'hvk::DynamicUniforms::capacityItems'
+  

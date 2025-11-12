@@ -46,9 +46,9 @@ struct TransformComponent {
     glm::quat rotation{1.0f, 0.0f, 0.0f, 0.0f};  // Identity quaternion
     glm::vec3 scale{1.0f, 1.0f, 1.0f};
 
-    TransformComponent() = default;
+    constexpr TransformComponent() = default;
 
-    TransformComponent(const glm::vec3& pos,
+    constexpr TransformComponent(const glm::vec3& pos,
                       const glm::quat& rot = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
                       const glm::vec3& scl = glm::vec3(1.0f))
         : position(pos), rotation(rot), scale(scl) {}
@@ -65,9 +65,9 @@ struct MeshComponent {
     int32_t nodeIndex = -1;              // Specific node in model (-1 = draw entire model)
     bool visible = true;
 
-    MeshComponent() = default;
+    constexpr MeshComponent() = default;
 
-    explicit MeshComponent(uint32_t handle, int32_t node = -1)
+    explicit constexpr MeshComponent(uint32_t handle, int32_t node = -1)
         : modelHandle(handle), nodeIndex(node) {}
 };
 
@@ -97,10 +97,10 @@ struct CameraComponent {
     float nearPlane = 0.1f;
     float farPlane = 1000.0f;
 
-    CameraComponent() = default;
+    constexpr CameraComponent() = default;
 
     // Factory methods
-    static CameraComponent createPerspective(
+    static constexpr CameraComponent createPerspective(
         float fovYDegrees = 45.0f,
         float aspectRatio = 16.0f / 9.0f,
         float nearPlane = 0.1f,
@@ -115,7 +115,7 @@ struct CameraComponent {
         return comp;
     }
 
-    static CameraComponent createOrthographic(
+    static constexpr CameraComponent createOrthographic(
         float orthoWidth = 10.0f,
         float aspectRatio = 16.0f / 9.0f,
         float nearPlane = 0.1f,
@@ -143,9 +143,9 @@ struct PointLightComponent {
     float intensity = 1.0f;
     float radius = 10.0f;  // Attenuation radius
 
-    PointLightComponent() = default;
+    constexpr PointLightComponent() = default;
 
-    PointLightComponent(const glm::vec3& col, float intens, float rad = 10.0f)
+    constexpr PointLightComponent(const glm::vec3& col, float intens, float rad = 10.0f)
         : color(col), intensity(intens), radius(rad) {}
 };
 
@@ -158,9 +158,9 @@ struct DirectionalLightComponent {
     glm::vec3 color{1.0f, 1.0f, 1.0f};
     float intensity = 1.0f;
 
-    DirectionalLightComponent() = default;
+    constexpr DirectionalLightComponent() = default;
 
-    DirectionalLightComponent(const glm::vec3& col, float intens)
+    constexpr DirectionalLightComponent(const glm::vec3& col, float intens)
         : color(col), intensity(intens) {}
 };
 
@@ -176,9 +176,9 @@ struct SpotLightComponent {
     float innerConeAngle = 15.0f;  // Degrees
     float outerConeAngle = 30.0f;  // Degrees
 
-    SpotLightComponent() = default;
+    constexpr SpotLightComponent() = default;
 
-    SpotLightComponent(const glm::vec3& col, float intens, float rad,
+    constexpr SpotLightComponent(const glm::vec3& col, float intens, float rad,
                        float innerAngle, float outerAngle)
         : color(col), intensity(intens), radius(rad),
           innerConeAngle(innerAngle), outerConeAngle(outerAngle) {}
@@ -197,8 +197,8 @@ struct SpotLightComponent {
 struct ParentComponent {
     entt::entity parent = entt::null;
 
-    ParentComponent() = default;
-    explicit ParentComponent(entt::entity p) : parent(p) {}
+    constexpr ParentComponent() = default;
+    explicit constexpr ParentComponent(entt::entity p) : parent(p) {}
 };
 
 /**
@@ -210,7 +210,7 @@ struct ParentComponent {
 struct ChildrenComponent {
     std::vector<entt::entity> children;
 
-    ChildrenComponent() = default;
+    constexpr ChildrenComponent() = default;
 };
 
 // ============================================================================
@@ -223,10 +223,10 @@ struct ChildrenComponent {
 struct NameComponent {
     std::string name;
 
-    NameComponent() = default;
+    constexpr NameComponent() = default;
 
-    explicit NameComponent(const std::string& n) : name(n) {}
-    explicit NameComponent(std::string&& n) : name(std::move(n)) {}
+    explicit constexpr NameComponent(const std::string& n) : name(n) {}
+    explicit constexpr NameComponent(std::string&& n) : name(std::move(n)) {}
 };
 
 // ============================================================================
@@ -271,10 +271,10 @@ struct BillboardComponent {
     // Blend mode hints
     bool additiveBlend = false;  // Use additive blending (for glows/particles)
 
-    BillboardComponent() = default;
+    constexpr BillboardComponent() = default;
 
     // Convenience: Solid color billboard
-    static BillboardComponent createSolid(
+    static constexpr BillboardComponent createSolid(
         const glm::vec2& size,
         const glm::vec4& color,
         BillboardMode mode = BillboardMode::Spherical,
@@ -289,7 +289,7 @@ struct BillboardComponent {
     }
 
     // Convenience: Textured billboard
-    static BillboardComponent createTextured(
+    static constexpr BillboardComponent createTextured(
         const glm::vec2& size,
         uint32_t textureHandle,
         const glm::vec4& tint = glm::vec4(1.0f),

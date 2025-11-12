@@ -5,7 +5,7 @@
 
 namespace hvk {
 
-void HierarchySystem::update(entt::registry& registry, float deltaTime) {
+void HierarchySystem::update(entt::registry& registry, float /*deltaTime*/) {
     
 
     // Process all entities with a parent

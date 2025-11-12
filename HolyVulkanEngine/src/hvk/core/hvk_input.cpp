@@ -167,7 +167,7 @@ bool Input::isCursorDisabled() {
 
 // --- GLFW Callbacks ---
 
-void Input::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+void Input::scrollCallback(GLFWwindow* /*window*/, double xoffset, double yoffset) {
     // Accumulate scroll delta (will be reset in update())
     scrollDelta_ += glm::vec2(static_cast<float>(xoffset), static_cast<float>(yoffset));
 }

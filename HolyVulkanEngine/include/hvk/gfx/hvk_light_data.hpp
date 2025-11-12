@@ -55,7 +55,7 @@ struct Light {
     glm::vec4 params;       // x = innerConeAngle (cos), y = outerConeAngle (cos), z/w = reserved
 
     // Default constructor (invalid light)
-    Light()
+    constexpr Light()
         : position(0.0f), direction(0.0f), color(0.0f), params(0.0f)
     {}
 
@@ -64,7 +64,7 @@ struct Light {
     /**
      * Create a directional light (sun, moon, etc.)
      */
-    static Light makeDirectional(const glm::vec3& dir, const glm::vec3& col, float intensity = 1.0f) {
+    static constexpr Light makeDirectional(const glm::vec3& dir, const glm::vec3& col, float intensity = 1.0f) {
         Light light;
         light.position = glm::vec4(0.0f, 0.0f, 0.0f, static_cast<float>(LightType::Directional));
         light.direction = glm::vec4(glm::normalize(dir), 0.0f); // range = 0 (infinite)
@@ -76,7 +76,7 @@ struct Light {
     /**
      * Create a point light (light bulb, torch, etc.)
      */
-    static Light makePoint(const glm::vec3& pos, const glm::vec3& col, float intensity = 1.0f, float range = 10.0f) {
+    static constexpr Light makePoint(const glm::vec3& pos, const glm::vec3& col, float intensity = 1.0f, float range = 10.0f) {
         Light light;
         light.position = glm::vec4(pos, static_cast<float>(LightType::Point));
         light.direction = glm::vec4(0.0f, 0.0f, 0.0f, range);
@@ -88,7 +88,7 @@ struct Light {
     /**
      * Create a spot light (flashlight, street lamp, etc.)
      */
-    static Light makeSpot(
+    static constexpr Light makeSpot(
         const glm::vec3& pos,
         const glm::vec3& dir,
         const glm::vec3& col,
@@ -108,19 +108,19 @@ struct Light {
 
     // --- Accessors ---
 
-    LightType getType() const {
+    constexpr LightType getType() const {
         return static_cast<LightType>(static_cast<uint32_t>(position.w));
     }
 
-    bool isDirectional() const { return getType() == LightType::Directional; }
-    bool isPoint() const { return getType() == LightType::Point; }
-    bool isSpot() const { return getType() == LightType::Spot; }
+    constexpr bool isDirectional() const { return getType() == LightType::Directional; }
+    constexpr bool isPoint() const { return getType() == LightType::Point; }
+    constexpr bool isSpot() const { return getType() == LightType::Spot; }
 
-    glm::vec3 getPosition() const { return glm::vec3(position); }
-    glm::vec3 getDirection() const { return glm::vec3(direction); }
-    glm::vec3 getColor() const { return glm::vec3(color); }
-    float getIntensity() const { return color.a; }
-    float getRange() const { return direction.w; }
+    constexpr glm::vec3 getPosition() const { return glm::vec3(position); }
+    constexpr glm::vec3 getDirection() const { return glm::vec3(direction); }
+    constexpr glm::vec3 getColor() const { return glm::vec3(color); }
+    constexpr float getIntensity() const { return color.a; }
+    constexpr float getRange() const { return direction.w; }
 };
 
 // Size validation (should be 64 bytes)
@@ -140,7 +140,7 @@ struct LightBuffer {
     uint32_t lightCount;
     std::vector<Light> lights;
 
-    LightBuffer() : lightCount(0) {}
+    constexpr LightBuffer() : lightCount(0) {}
 
     void clear() {
         lights.clear();
@@ -153,7 +153,7 @@ struct LightBuffer {
     }
 
     // Get total size in bytes for GPU buffer allocation
-    size_t getBufferSize() const {
+    constexpr size_t getBufferSize() const {
         // uint32_t lightCount (4 bytes) + padding to 16 bytes + Light[] array
         // std430 aligns uint to 4 bytes, but next element (Light[]) starts at 16-byte boundary
         size_t headerSize = 16; // uint32_t + 12 bytes padding
@@ -176,10 +176,10 @@ struct LightBuffer {
     }
 
     // Convenience: get pointer to data (for memcpy)
-    const void* data() const { return &lightCount; }
+    constexpr const void* data() const { return &lightCount; }
 
-    bool empty() const { return lightCount == 0; }
-    size_t size() const { return lights.size(); }
+    constexpr bool empty() const { return lightCount == 0; }
+    constexpr size_t size() const { return lights.size(); }
 };
 
 /**

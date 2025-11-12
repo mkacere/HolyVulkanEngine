@@ -58,7 +58,7 @@ struct SceneData {
     // glm::vec4 tonemapParams;     // x = exposure, y = gamma, z/w = unused
 
     // Default constructor
-    SceneData()
+    constexpr SceneData() noexcept
         : ambientColor(0.1f, 0.1f, 0.1f, 1.0f)
         , fogColor(0.5f, 0.5f, 0.5f, 0.01f)
         , fogRange(10.0f, 100.0f)
@@ -69,25 +69,25 @@ struct SceneData {
     {}
 
     // Update timing each frame
-    void updateTiming(float absoluteTime, float dt) {
+    void updateTiming(float absoluteTime, float dt) noexcept {
         time = absoluteTime;
         deltaTime = dt;
         frameCount++;
     }
 
     // Set ambient light
-    void setAmbient(const glm::vec3& color, float intensity = 1.0f) {
+    void setAmbient(const glm::vec3& color, float intensity = 1.0f) noexcept {
         ambientColor = glm::vec4(color, intensity);
     }
 
     // Set fog parameters
-    void setFog(const glm::vec3& color, float density, float nearDist, float farDist) {
+    void setFog(const glm::vec3& color, float density, float nearDist, float farDist) noexcept {
         fogColor = glm::vec4(color, density);
         fogRange = glm::vec2(nearDist, farDist);
     }
 
     // Disable fog
-    void disableFog() {
+    void disableFog() noexcept {
         fogColor.a = 0.0f; // density = 0
     }
 };

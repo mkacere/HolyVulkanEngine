@@ -1,0 +1,11 @@
+MSBuild version 17.14.23+b0019275e for .NET Framework
+
+  Checking File Globs
+  Building SPIR-V shaders
+  glfw.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\lib\Debug\glfw3.lib
+  HVKEngine.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\lib\Debug\HVKEngine.lib
+  ECSDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\ECSDemo.exe
+  GridDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\GridDemo.exe
+  HVKApp.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\HVKApp.exe
+  PrimitivesDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\PrimitivesDemo.exe
+  SkyboxDemo.vcxproj -> C:\Users\mkace\OneDrive\Documents\HolyVulkanEngineWorkSpace\build\debug\bin\Debug\SkyboxDemo.exe

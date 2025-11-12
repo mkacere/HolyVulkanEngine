@@ -286,7 +286,7 @@ public:
      *
      * @param registry ECS registry
      */
-    virtual void init(entt::registry& registry) {}
+    virtual void init(entt::registry& /*registry*/) {}
 
     /**
      * Update system (game logic)
