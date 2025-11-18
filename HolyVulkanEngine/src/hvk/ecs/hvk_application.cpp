@@ -457,12 +457,21 @@ void Application::updateGlobalDescriptors() {
     // Update global descriptors
     if (activeCam != entt::null) {
         auto* renderCam = scene_->getComponent<RenderCamera>(activeCam);
-        if (renderCam) {
-            // Build CameraData from RenderCamera component
+        auto* transform = scene_->getComponent<TransformComponent>(activeCam);
+
+        if (renderCam && transform) {
+            // Build CameraData from RenderCamera + Transform components
             CameraData camData;
             camData.view = renderCam->view;
             camData.projection = renderCam->projection;
             camData.viewProjection = renderCam->viewProjection;
+            camData.invView = glm::inverse(renderCam->view);
+            camData.invProjection = glm::inverse(renderCam->projection);
+            camData.position = glm::vec4(transform->position, 1.0f);
+
+            // Extract forward direction from view matrix (negative Z axis in view space)
+            camData.direction = glm::vec4(-renderCam->view[0][2], -renderCam->view[1][2], -renderCam->view[2][2], 0.0f);
+
             camData.screenSize = glm::vec2(swapchain_->extent().width, swapchain_->extent().height);
 
             // Update global descriptor set

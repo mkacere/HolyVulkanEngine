@@ -47,4 +47,14 @@ if(HVK_WITH_ECS)
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     )
     add_dependencies(ECSDemo compile_shaders)
+
+    # Fractal demo - 3D raymarched fractals
+    add_executable(FractalDemo fractal_demo.cpp)
+    target_compile_features(FractalDemo PRIVATE cxx_std_20)
+    target_compile_definitions(FractalDemo PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(FractalDemo PRIVATE HVKEngine)
+    set_target_properties(FractalDemo PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    )
+    add_dependencies(FractalDemo compile_shaders)
 endif()

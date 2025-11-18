@@ -1,7 +1,7 @@
 /**
  * @file hvk_time.hpp
  * @brief Global time management system with delta time and FPS tracking
- * @author Holy Vulkan Engine
+ * @author soyruz
  * @date 2025
  */
 
