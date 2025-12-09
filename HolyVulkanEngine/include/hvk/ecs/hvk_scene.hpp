@@ -463,6 +463,33 @@ public:
     uint32_t frameIndex() const { return frameIndex_; }
 
     // ========================================================================
+    // Transform Interpolation (for fixed timestep smoothing)
+    // ========================================================================
+
+    /**
+     * Copy current transforms to previous transforms
+     *
+     * Call this BEFORE fixed timestep updates to store previous state.
+     * Entities without PreviousTransformComponent will have it added automatically.
+     */
+    void copyCurrentToPrevious();
+
+    /**
+     * Set interpolation alpha for smooth rendering
+     *
+     * @param alpha Blend factor between previous and current (0.0 to 1.0)
+     *              alpha = accumulator / fixedTimestep
+     */
+    void setInterpolationAlpha(float alpha) { interpolationAlpha_ = alpha; }
+
+    /**
+     * Get interpolation alpha
+     *
+     * @return Current interpolation alpha (0.0 to 1.0)
+     */
+    float interpolationAlpha() const { return interpolationAlpha_; }
+
+    // ========================================================================
     // System Management
     // ========================================================================
 
@@ -507,6 +534,9 @@ private:
 
     // Frame tracking
     uint32_t frameIndex_ = 0;
+
+    // Transform interpolation (for smooth rendering with fixed timestep)
+    float interpolationAlpha_ = 0.0f;  // Blend factor: 0.0 = previous, 1.0 = current
 };
 
 } // namespace hvk

@@ -55,6 +55,35 @@ struct TransformComponent {
 };
 
 /**
+ * PreviousTransformComponent - Previous frame's transform for interpolation
+ *
+ * Enables smooth rendering with fixed timestep physics/logic updates.
+ * TransformSystem interpolates between previous and current transforms
+ * based on accumulator alpha to eliminate visual judder.
+ *
+ * Only add this to entities that need smooth motion (moving objects, animated entities).
+ * Static objects don't need this component.
+ *
+ * How it works (AAA engine technique):
+ * 1. Before fixed timestep updates: Copy current -> previous
+ * 2. Fixed updates modify current transform (discrete steps)
+ * 3. During rendering: Interpolate between previous and current
+ * 4. Result: Smooth visuals at any framerate (144Hz, 240Hz, etc.)
+ */
+struct PreviousTransformComponent {
+    glm::vec3 position{0.0f, 0.0f, 0.0f};
+    glm::quat rotation{1.0f, 0.0f, 0.0f, 0.0f};  // Identity quaternion
+    glm::vec3 scale{1.0f, 1.0f, 1.0f};
+
+    constexpr PreviousTransformComponent() = default;
+
+    constexpr PreviousTransformComponent(const glm::vec3& pos,
+                      const glm::quat& rot = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+                      const glm::vec3& scl = glm::vec3(1.0f))
+        : position(pos), rotation(rot), scale(scl) {}
+};
+
+/**
  * MeshComponent - References a renderable mesh
  *
  * Uses handle pattern: stores index into ResourceManager's model pool.

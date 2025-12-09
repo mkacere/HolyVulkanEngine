@@ -51,6 +51,13 @@
 // Render Systems (Vulkan bridge)
 #include <hvk/ecs/systems/hvk_mesh_render_system.hpp>
 #include <hvk/ecs/systems/hvk_billboard_render_system.hpp>
+#include <hvk/ecs/systems/hvk_debug_line_render_system.hpp>
+
+// Physics components and systems (if enabled)
+#ifdef HVK_WITH_PHYSICS
+#include <hvk/ecs/hvk_physics_components.hpp>
+#include <hvk/ecs/systems/hvk_physics_system.hpp>
+#endif
 
 // EnTT registry (for advanced users)
 #include <entt/entt.hpp>

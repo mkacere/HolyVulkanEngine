@@ -3,9 +3,9 @@
 #include <hvk/ecs/hvk_components.hpp>
 #include <hvk/gfx/hvk_global_descriptors.hpp>
 #include <hvk/gfx/hvk_cmd_list.hpp>
+#include <hvk/gfx/hvk_shader_builder.hpp>
+#include <hvk/gfx/hvk_pipeline_builder.hpp>
 #include <hvk/core/hvk_time.hpp>
-#include <fstream>
-#include <cstring>
 
 #ifndef PROJECT_ROOT
 #define PROJECT_ROOT "."
@@ -13,143 +13,49 @@
 
 namespace hvk {
 
-// Helper function to load SPIR-V bytecode from file
-static std::vector<uint32_t> loadSpirv(const char* path) {
-    std::ifstream f(path, std::ios::binary);
-    if (!f) {
-        throw std::runtime_error(std::string("FractalRenderSystem: Failed to open SPIR-V: ") + path);
-    }
-    std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(f)), {});
-    if (bytes.size() % 4) {
-        throw std::runtime_error("FractalRenderSystem: SPIR-V file size not multiple of 4");
-    }
-    std::vector<uint32_t> words(bytes.size() / 4);
-    std::memcpy(words.data(), bytes.data(), bytes.size());
-    return words;
-}
-
 void FractalRenderSystem::init(Scene& scene) {
-    device_ = &scene.resources().device();
-    pipelineCache_ = scene.pipelineCache();
-
-    if (!pipelineCache_) {
-        throw std::runtime_error("FractalRenderSystem: No pipeline cache available");
-    }
+    // Initialize base class (REQUIRED)
+    initBase(scene);
 
     // Initialize default parameters
     initDefaultParams();
 
-    // Get global descriptor layout (Set 0: Camera + Scene + Lights)
-    const DescriptorSetLayout* globalLayout = scene.globalDescriptorLayout();
-    if (!globalLayout) {
-        throw std::runtime_error("FractalRenderSystem: Missing global descriptor layout");
-    }
-
     // ========================================================================
-    // Create Pipeline Layout
+    // Load Shaders (using ShaderBuilder - reduced from ~30 lines to 3!)
     // ========================================================================
 
-    // Only use global descriptors (Set 0) - we get camera matrices from there
-    std::vector<VkDescriptorSetLayout> setLayouts = {
-        globalLayout->handle()
-    };
+    auto shaders = ShaderBuilder()
+        .loadVertex(PROJECT_ROOT "/shaders/fractal.vert.spv")
+        .loadFragment(PROJECT_ROOT "/shaders/fractal.frag.spv")
+        .build(*device_);
 
-    // Push constants for fractal parameters
-    VkPushConstantRange pushRange{};
-    pushRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    pushRange.offset = 0;
-    pushRange.size = sizeof(FractalParams);
-
-    VkPipelineLayoutCreateInfo layoutCI{};
-    layoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layoutCI.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
-    layoutCI.pSetLayouts = setLayouts.data();
-    layoutCI.pushConstantRangeCount = 1;
-    layoutCI.pPushConstantRanges = &pushRange;
-
-    VK_CHECK(vkCreatePipelineLayout(device_->device(), &layoutCI, nullptr, &pipelineLayout_));
+    // Track shaders for automatic cleanup
+    trackShaderModules(shaders);
 
     // ========================================================================
-    // Load Shaders
+    // Create Pipeline Layout (using helper - reduced from ~15 lines to 1!)
     // ========================================================================
 
-    auto vs_spirv = loadSpirv(PROJECT_ROOT "/shaders/fractal.vert.spv");
-    auto fs_spirv = loadSpirv(PROJECT_ROOT "/shaders/fractal.frag.spv");
-
-    VkShaderModuleCreateInfo vsCI{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
-    vsCI.codeSize = vs_spirv.size() * 4;
-    vsCI.pCode = vs_spirv.data();
-    VK_CHECK(vkCreateShaderModule(device_->device(), &vsCI, nullptr, &vertexShader_));
-
-    VkShaderModuleCreateInfo fsCI{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
-    fsCI.codeSize = fs_spirv.size() * 4;
-    fsCI.pCode = fs_spirv.data();
-    VK_CHECK(vkCreateShaderModule(device_->device(), &fsCI, nullptr, &fragmentShader_));
+    pipelineLayout_ = createPipelineLayout(
+        scene,
+        shaders.stages,
+        sizeof(FractalParams),
+        VK_SHADER_STAGE_FRAGMENT_BIT
+    );
 
     // ========================================================================
-    // Create Pipeline
+    // Create Pipeline (using PipelineBuilder - reduced from ~40 lines to 6!)
     // ========================================================================
 
-    createPipeline(scene);
-}
+    pipeline_ = PipelineBuilder()
+        .setShaders(shaders)
+        .setLayout(pipelineLayout_)
+        .noVertexInput()               // Fullscreen triangle is procedural
+        .makeFullscreen()              // Preset: no depth, no vertex input
+        .build(*pipelineCache_, getRenderFormats(scene));
 
-void FractalRenderSystem::createPipeline(Scene& /*scene*/) {
-    // ========================================================================
-    // Configure Pipeline State
-    // ========================================================================
-
-    ShaderStageDesc vs{};
-    vs.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vs.module = vertexShader_;
-    vs.entry = "main";
-
-    ShaderStageDesc fs{};
-    fs.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fs.module = fragmentShader_;
-    fs.entry = "main";
-
-    // No vertex input (fullscreen triangle is procedural)
-    VertexInputDesc vertexInput{};
-
-    // Rasterization state
-    RasterState raster{};
-    raster.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    raster.cullMode = VK_CULL_MODE_NONE; // Fullscreen triangle covers everything
-    raster.frontFace = VK_FRONT_FACE_CLOCKWISE;
-    raster.polygonMode = VK_POLYGON_MODE_FILL;
-    raster.rasterSamples = VK_SAMPLE_COUNT_1_BIT;
-
-    // Depth/Stencil: No depth testing (fullscreen)
-    DepthStencilState depthStencil{};
-    depthStencil.depthTestEnable = VK_FALSE;
-    depthStencil.depthWriteEnable = VK_FALSE;
-
-    // Color blending: No blending (opaque fractal)
-    ColorBlendState colorBlend{};
-    colorBlend.attachments.resize(1);
-    colorBlend.attachments[0].blendEnable = VK_FALSE;
-    colorBlend.attachments[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                                               VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
-    // Render formats (hardcoded - standard SRGB format with depth)
-    RenderFormats formats{};
-    formats.colorFormats = { VK_FORMAT_B8G8R8A8_SRGB };
-    formats.depthFormat = VK_FORMAT_D32_SFLOAT; // Must match render pass depth format
-
-    // ========================================================================
-    // Create Pipeline via PipelineCache
-    // ========================================================================
-
-    GraphicsPipelineDesc desc{};
-    desc.layout = pipelineLayout_;
-    desc.stages = { vs, fs };
-    desc.vertexInput = vertexInput;
-    desc.raster = raster;
-    desc.depthStencil = depthStencil;
-    desc.colorBlend = colorBlend;
-    desc.formats = formats;
-
-    pipeline_ = pipelineCache_->get(desc);
+    // Pipeline is automatically cached, no manual cleanup needed
+    trackPipeline(pipeline_);
 }
 
 void FractalRenderSystem::render(Scene& scene, CmdList& cmd) {
@@ -177,31 +83,7 @@ void FractalRenderSystem::render(Scene& scene, CmdList& cmd) {
     cmd.draw(3);
 }
 
-void FractalRenderSystem::cleanup() {
-    if (!device_) return;
-
-    VkDevice dev = device_->device();
-
-    if (pipeline_ != VK_NULL_HANDLE) {
-        // Note: Pipeline is managed by GraphicsPipelineCache, don't destroy it manually
-        pipeline_ = VK_NULL_HANDLE;
-    }
-
-    if (pipelineLayout_ != VK_NULL_HANDLE) {
-        vkDestroyPipelineLayout(dev, pipelineLayout_, nullptr);
-        pipelineLayout_ = VK_NULL_HANDLE;
-    }
-
-    if (vertexShader_ != VK_NULL_HANDLE) {
-        vkDestroyShaderModule(dev, vertexShader_, nullptr);
-        vertexShader_ = VK_NULL_HANDLE;
-    }
-
-    if (fragmentShader_ != VK_NULL_HANDLE) {
-        vkDestroyShaderModule(dev, fragmentShader_, nullptr);
-        fragmentShader_ = VK_NULL_HANDLE;
-    }
-}
+// Cleanup is now automatic via RenderSystemBase destructor!
 
 void FractalRenderSystem::initDefaultParams() {
     params_ = {};

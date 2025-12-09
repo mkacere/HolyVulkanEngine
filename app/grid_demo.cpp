@@ -339,7 +339,7 @@ int main() {
                 else Input::setCursorMode(GLFW_CURSOR_DISABLED);
             }
 
-            cameraController.update(camera);
+            cameraController.update(camera, Time::deltaTime());
 
             // Handle window resize
             if (window.wasResized()) {

@@ -91,7 +91,9 @@ glm::vec3 Camera::eulerAngles() const {
     float yaw = glm::degrees(atan2(fwd.x, -fwd.z));
 
     // Pitch: rotation around X-axis (vertical)
-    float pitch = glm::degrees(asin(-fwd.y));
+    // Positive pitch = looking up, negative pitch = looking down
+    // fwd.y is negative when looking down, positive when looking up
+    float pitch = glm::degrees(asin(fwd.y));  // Fixed: removed negation
 
     // Roll: rotation around Z-axis (for FPS cameras, this should stay near 0)
     // Extract from up vector to determine roll

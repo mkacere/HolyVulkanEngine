@@ -255,7 +255,7 @@ private:
     // Helper methods
     void updateGlobalDescriptors();     // Update SceneData, CameraData, LightBuffer
     void collectLightsFromScene();      // Collect lights from ECS into lightBuffer_
-    void updateCameraController();      // Update camera controller if enabled
+    void updateCameraController(float deltaTime);  // Update camera controller at fixed timestep
 
     // Configuration
     ApplicationCreateInfo createInfo_;
@@ -300,6 +300,10 @@ private:
     uint32_t swapImageIndex_ = 0;
     bool shouldQuit_ = false;
     bool initialized_ = false;
+
+    // Fixed timestep state
+    static constexpr float FIXED_TIMESTEP = 1.0f / 60.0f;  // 60 Hz fixed updates
+    float accumulator_ = 0.0f;
 
     // Rendering resources
     GpuImage depthImage_;

@@ -259,9 +259,6 @@ void Application::mainLoop() {
         Input::update();
         Time::update();
 
-        // Update camera controller (before user update)
-        updateCameraController();
-
         if (createInfo_.enableImGui) {
             imgui_->newFrame();
         }
@@ -282,11 +279,40 @@ void Application::mainLoop() {
             window_->clearResizedFlag();
         }
 
+        // ====================================================================
+        // Fixed Timestep Loop with Interpolation (AAA Quality)
+        // ====================================================================
+
+        // Store previous transform state BEFORE updates
+        // This enables smooth interpolation during rendering
+        scene_->copyCurrentToPrevious();
+
+        // Update camera at variable framerate for responsive, smooth rendering
+        updateCameraController(Time::deltaTime());
+
+        // Accumulate frame time
+        accumulator_ += Time::deltaTime();
+
+        // Fixed timestep updates (physics, game logic)
+        // Run zero or more fixed updates per frame to catch up
+        while (accumulator_ >= FIXED_TIMESTEP) {
+            // Update scene with fixed timestep
+            scene_->update(FIXED_TIMESTEP);
+
+            accumulator_ -= FIXED_TIMESTEP;
+        }
+
+        // Calculate interpolation alpha for smooth rendering
+        // Alpha blends between previous (0.0) and current (1.0) transform states
+        float alpha = accumulator_ / FIXED_TIMESTEP;
+        scene_->setInterpolationAlpha(alpha);
+
+        // ====================================================================
+        // Rendering (variable timestep with interpolation)
+        // ====================================================================
+
         // Begin frame
         beginFrame();
-
-        // Update scene
-        update();
 
         // Update global descriptors before rendering
         updateGlobalDescriptors();
@@ -528,7 +554,7 @@ void Application::collectLightsFromScene() {
     // TODO: Add spot lights when SpotLightComponent is defined
 }
 
-void Application::updateCameraController() {
+void Application::updateCameraController(float deltaTime) {
     if (!cameraController_) {
         return; // Controller disabled
     }
@@ -569,6 +595,40 @@ void Application::updateCameraController() {
     // Write back position and rotation to TransformComponent
     transform->position = tempCamera.position();
     transform->rotation = tempCamera.rotation();
+
+    // Update RenderCamera matrices at variable framerate for smooth camera rendering
+    // This ensures view matrix updates every frame (not just at 60Hz)
+    {
+        // Compute view matrix from transform
+        glm::mat4 rotationMatrix = glm::mat4_cast(transform->rotation);
+        glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), transform->position);
+        glm::mat4 viewMatrix = glm::inverse(translationMatrix * rotationMatrix);
+
+        // Compute projection matrix
+        glm::mat4 projMatrix;
+        if (camComp->type == CameraComponent::Type::Perspective) {
+            float fovYRadians = glm::radians(camComp->fovYDegrees);
+            projMatrix = glm::perspectiveRH_ZO(fovYRadians, camComp->aspectRatio, camComp->nearPlane, camComp->farPlane);
+            projMatrix[1][1] *= -1.0f;  // Flip Y for Vulkan
+        } else {
+            float width = camComp->orthoWidth;
+            float height = width / camComp->aspectRatio;
+            float left = -width * 0.5f;
+            float right = width * 0.5f;
+            float bottom = -height * 0.5f;
+            float top = height * 0.5f;
+            projMatrix = glm::orthoRH_ZO(left, right, bottom, top, camComp->nearPlane, camComp->farPlane);
+            projMatrix[1][1] *= -1.0f;  // Flip Y for Vulkan
+        }
+
+        // Update RenderCamera component
+        auto* renderCam = scene_->getComponent<RenderCamera>(activeCam);
+        if (renderCam) {
+            renderCam->view = viewMatrix;
+            renderCam->projection = projMatrix;
+            renderCam->viewProjection = projMatrix * viewMatrix;
+        }
+    }
 }
 
 entt::entity Application::activeCamera() const {

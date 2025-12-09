@@ -57,4 +57,26 @@ if(HVK_WITH_ECS)
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     )
     add_dependencies(FractalDemo compile_shaders)
+
+    # Debug Line demo - Debug line rendering system showcase
+    add_executable(DebugLineDemo debug_line_demo.cpp)
+    target_compile_features(DebugLineDemo PRIVATE cxx_std_20)
+    target_compile_definitions(DebugLineDemo PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
+    target_link_libraries(DebugLineDemo PRIVATE HVKEngine)
+    set_target_properties(DebugLineDemo PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    )
+    add_dependencies(DebugLineDemo compile_shaders)
+
+    # Physics demo - Jolt Physics integration showcase
+    if(HVK_WITH_PHYSICS)
+        add_executable(PhysicsDemo physics_demo.cpp)
+        target_compile_features(PhysicsDemo PRIVATE cxx_std_20)
+        target_compile_definitions(PhysicsDemo PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
+        target_link_libraries(PhysicsDemo PRIVATE HVKEngine)
+        set_target_properties(PhysicsDemo PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+        )
+        add_dependencies(PhysicsDemo compile_shaders)
+    endif()
 endif()

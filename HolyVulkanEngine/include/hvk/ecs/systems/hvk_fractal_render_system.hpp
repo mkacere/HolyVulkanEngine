@@ -9,10 +9,7 @@
 #ifndef HVK_ECS_FRACTAL_RENDER_SYSTEM_HPP
 #define HVK_ECS_FRACTAL_RENDER_SYSTEM_HPP
 
-#include <hvk/ecs/hvk_system.hpp>
-#include <hvk/gfx/hvk_device.h>
-#include <hvk/gfx/hvk_graphics_pipeline_cache.h>
-#include <hvk/gfx/hvk_pipeline_layout_cache.h>
+#include <hvk/ecs/systems/hvk_render_system_base.hpp>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
@@ -45,7 +42,7 @@ class GlobalDescriptorLayout;
  * - Control via ImGui in application's onImGui callback
  * - Navigate with camera controller (WASD + mouse)
  */
-class FractalRenderSystem : public ISystem {
+class FractalRenderSystem : public RenderSystemBase {
 public:
     /**
      * Fractal type enumeration
@@ -106,7 +103,6 @@ public:
 
     void init(Scene& scene) override;
     void render(Scene& scene, CmdList& cmd) override;
-    void cleanup();
 
     /**
      * Get/set fractal parameters for ImGui control
@@ -120,26 +116,15 @@ public:
     void resetParams();
 
 private:
-    // Pipeline resources
+    // Pipeline resources (base class manages cleanup)
     VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
-
-    // Shader modules
-    VkShaderModule vertexShader_ = VK_NULL_HANDLE;
-    VkShaderModule fragmentShader_ = VK_NULL_HANDLE;
-
-    // Cached pointers
-    const Device* device_ = nullptr;
-    GraphicsPipelineCache* pipelineCache_ = nullptr;
 
     // Fractal parameters (CPU-side)
     FractalParams params_;
 
     // Helper: Initialize default parameters
     void initDefaultParams();
-
-    // Helper: Create pipeline
-    void createPipeline(Scene& scene);
 };
 
 } // namespace hvk

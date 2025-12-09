@@ -81,6 +81,44 @@ else()
     message(FATAL_ERROR "GLFW not found. Install glfw3 or add external/glfw.")
 endif()
 
+# ============================================================================
+# Jolt Physics
+# ============================================================================
+
+option(HVK_WITH_PHYSICS "Build physics module with Jolt Physics" ON)
+
+if(HVK_WITH_PHYSICS)
+    message(STATUS "Configuring Jolt Physics...")
+
+    # Jolt build configuration
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    set(INTERPROCEDURAL_OPTIMIZATION OFF CACHE BOOL "" FORCE)
+    set(GENERATE_DEBUG_SYMBOLS ON CACHE BOOL "" FORCE)
+    set(OVERRIDE_CXX_FLAGS OFF CACHE BOOL "" FORCE)
+    set(CROSS_PLATFORM_DETERMINISTIC OFF CACHE BOOL "" FORCE)
+    set(DOUBLE_PRECISION OFF CACHE BOOL "" FORCE)
+    set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(ENABLE_ALL_WARNINGS OFF CACHE BOOL "" FORCE)
+
+    # Add Jolt subdirectory
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/JoltPhysics/Build)
+
+    # Link Jolt to engine
+    target_link_libraries(HVKEngine PUBLIC Jolt)
+
+    # Add Jolt headers to engine's public includes
+    target_include_directories(HVKEngine SYSTEM PUBLIC
+        ${CMAKE_CURRENT_LIST_DIR}/external/JoltPhysics
+    )
+
+    # Define HVK_WITH_PHYSICS preprocessor macro
+    target_compile_definitions(HVKEngine PUBLIC HVK_WITH_PHYSICS)
+
+    message(STATUS "Jolt Physics: Enabled")
+else()
+    message(STATUS "Jolt Physics: Disabled (set HVK_WITH_PHYSICS=ON to enable)")
+endif()
+
 # ImGui source files
 set(IMGUI_DIR ${CMAKE_CURRENT_LIST_DIR}/external/imgui)
 target_sources(HVKEngine PRIVATE

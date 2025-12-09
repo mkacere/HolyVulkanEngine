@@ -406,4 +406,40 @@ void Scene::render(CmdList& cmd, uint32_t frameIndex) {
     }
 }
 
+// ============================================================================
+// Transform Interpolation
+// ============================================================================
+
+void Scene::copyCurrentToPrevious() {
+    // Iterate over all entities with TransformComponent
+    auto view = registry_.view<TransformComponent>();
+
+    for (auto entity : view) {
+        // Skip camera entities - they update at variable framerate and don't need interpolation
+        // Interpolation is only for fixed-timestep objects (physics, game logic)
+        if (registry_.any_of<CameraComponent>(entity)) {
+            continue;
+        }
+
+        const auto& current = view.get<TransformComponent>(entity);
+
+        // Get or create PreviousTransformComponent
+        auto* previous = registry_.try_get<PreviousTransformComponent>(entity);
+        if (previous) {
+            // Update existing
+            previous->position = current.position;
+            previous->rotation = current.rotation;
+            previous->scale = current.scale;
+        } else {
+            // Add new PreviousTransformComponent initialized with current
+            registry_.emplace<PreviousTransformComponent>(
+                entity,
+                current.position,
+                current.rotation,
+                current.scale
+            );
+        }
+    }
+}
+
 } // namespace hvk

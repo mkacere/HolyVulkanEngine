@@ -91,6 +91,7 @@ private:
     // FPS mode state
     float fpsPitch_ = 0.0f;               // Vertical rotation in degrees
     float fpsYaw_ = -90.0f;               // Horizontal rotation in degrees (start looking forward)
+    bool fpsInitialized_ = false;         // Has FPS controller been initialized from camera?
 
     // Internal update methods
     void updateFPS(Camera& camera);

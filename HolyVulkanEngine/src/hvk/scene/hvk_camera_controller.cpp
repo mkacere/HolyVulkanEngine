@@ -14,20 +14,44 @@ void CameraController::update(Camera& camera) {
 void CameraController::updateFPS(Camera& camera) {
     float dt = Time::deltaTime();
 
+    // On first update, initialize controller from camera's current orientation
+    // This allows the camera to be positioned/rotated before the controller takes over
+    if (!fpsInitialized_) {
+        glm::vec3 euler = camera.eulerAngles();
+        fpsPitch_ = euler.x;  // pitch
+        fpsYaw_ = euler.y;    // yaw
+        fpsInitialized_ = true;
+
+        // Lock in the euler representation immediately to prevent snap on first mouse movement
+        // This ensures the camera uses euler-based rotation from frame 1, so mouse deltas
+        // are applied smoothly. Now that the pitch sign is fixed, this preserves the rotation.
+        camera.setEulerAngles(fpsPitch_, fpsYaw_, 0.0f);
+    }
+
+    // Track if rotation changed this frame
+    bool rotationChanged = false;
+
     // Mouse look (only if cursor is disabled)
     if (Input::isCursorDisabled()) {
         glm::vec2 mouseDelta = Input::mouseDelta();
 
-        // Update yaw and pitch
-        fpsYaw_ -= mouseDelta.x * mouseSensitivity_;
-        fpsPitch_ -= mouseDelta.y * mouseSensitivity_;
+        // Only update if mouse actually moved
+        if (glm::length(mouseDelta) > 0.001f) {
+            // Update yaw and pitch
+            fpsYaw_ -= mouseDelta.x * mouseSensitivity_;
+            fpsPitch_ -= mouseDelta.y * mouseSensitivity_;
 
-        // Clamp pitch to prevent camera flipping
-        fpsPitch_ = std::clamp(fpsPitch_, -89.0f, 89.0f);
+            // Clamp pitch to prevent camera flipping
+            fpsPitch_ = std::clamp(fpsPitch_, -89.0f, 89.0f);
+
+            rotationChanged = true;
+        }
     }
 
-    // Set camera rotation from pitch and yaw
-    camera.setEulerAngles(fpsPitch_, fpsYaw_, 0.0f);
+    // Only update camera rotation if it changed
+    if (rotationChanged) {
+        camera.setEulerAngles(fpsPitch_, fpsYaw_, 0.0f);
+    }
 
     // WASD movement
     glm::vec3 movement(0.0f);
