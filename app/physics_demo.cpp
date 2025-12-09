@@ -32,7 +32,7 @@ void setupScene(Application& app) {
         auto& rb = scene.addComponent<RigidBodyComponent>(ground);
         rb.type = RigidBodyComponent::Type::Static;
         rb.friction = 0.8f;
-        rb.restitution = 1.f;
+        rb.restitution = 0.3f;
 
         scene.addComponent<ColliderComponent>(ground,
             ColliderComponent::createBox(glm::vec3(20.0f, 0.5f, 20.0f))
@@ -40,7 +40,7 @@ void setupScene(Application& app) {
     }
 
     // Create falling boxes in a grid pattern
-    const int gridSize = 10;
+    const int gridSize = 5;
     const float spacing = 2.0f;
     const float startHeight = 10.0f;
 
@@ -120,7 +120,7 @@ void setupCamera(Application& app) {
         auto* transform = scene.getComponent<TransformComponent>(cameraEntity);
         if (transform) {
             // Position camera elevated and offset to view the falling boxes from an angle
-            transform->position = glm::vec3(18.0f, 12.0f, 18.0f);
+            transform->position = glm::vec3(18.0f, 20.0f, 18.0f);
 
             // Look at the center where blocks will fall and settle (mid-height of the action)
             glm::vec3 lookAtPoint = glm::vec3(0.0f, 5.0f, 0.0f);
@@ -139,8 +139,8 @@ void setupCamera(Application& app) {
 int main() {
     try {
         ApplicationCreateInfo appCI{};
-        appCI.windowCI.width = 1920;
-        appCI.windowCI.height = 1080;
+        appCI.windowCI.width = 1200;
+        appCI.windowCI.height = 800;
         appCI.windowCI.mode = WindowMode::Windowed;
         appCI.windowCI.title = "Physics Demo - Jolt Integration";
         appCI.deviceCI.debugVerbosity = DebugVerbosity::Error;
