@@ -22,3 +22,6 @@
 [submodule "HolyVulkanEngine/external/VulkanMemoryAllocator"]
 	path = HolyVulkanEngine/external/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "HolyVulkanEngine/external/JoltPhysics"]
+	path = HolyVulkanEngine/external/JoltPhysics
+	url = https://github.com/jrouwe/JoltPhysics.git
