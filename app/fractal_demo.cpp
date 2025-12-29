@@ -30,9 +30,7 @@ int main() {
         std::cout << "=== Holy Vulkan Engine - Fractal Explorer ===" << std::endl;
         std::cout << "3D Raymarched Fractals with Real-time Control\n" << std::endl;
 
-        // ====================================================================
         // Application Setup
-        // ====================================================================
         std::cout << "[1/2] Creating application..." << std::endl;
 
         // Configure window
@@ -63,9 +61,7 @@ int main() {
         // Keep a pointer to the fractal system for ImGui control
         FractalRenderSystem* fractalSystem = nullptr;
 
-        // ====================================================================
         // Initialize Scene
-        // ====================================================================
         std::cout << "\n[2/2] Registering fractal render system..." << std::endl;
 
         app.onInit([&fractalSystem](Application& app) {
@@ -105,9 +101,7 @@ int main() {
             Input::setCursorMode(GLFW_CURSOR_DISABLED);
         });
 
-        // ====================================================================
         // Update Loop
-        // ====================================================================
         app.onUpdate([](Application& app, float deltaTime) {
             Scene& scene = app.scene();
 
@@ -141,9 +135,7 @@ int main() {
             }
         });
 
-        // ====================================================================
         // ImGui - Fractal Parameter Controls
-        // ====================================================================
         app.onImGui([&fractalSystem](Application& /*app*/) {
             if (!fractalSystem) return;
 

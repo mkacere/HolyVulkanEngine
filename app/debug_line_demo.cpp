@@ -22,9 +22,7 @@
 
 using namespace hvk;
 
-// ============================================================================
 // Demo State
-// ============================================================================
 
 struct DemoState {
     // Toggles
@@ -50,9 +48,7 @@ struct DemoState {
     float cubeRotation = 0.0f;
 };
 
-// ============================================================================
 // Helper Functions
-// ============================================================================
 
 void drawAxes(DebugLineRenderSystem* debugLines, float length = 5.0f) {
     // X axis (red)
@@ -255,9 +251,7 @@ void drawSpiral(DebugLineRenderSystem* debugLines, const glm::vec3& center, floa
     }
 }
 
-// ============================================================================
 // Main Application
-// ============================================================================
 
 int main() {
     try {
@@ -278,9 +272,7 @@ int main() {
         // Store pointer to debug line system for later use
         DebugLineRenderSystem* debugLines = nullptr;
 
-        // ====================================================================
         // Initialization
-        // ====================================================================
 
         app.onInit([&](Application& app) {
             Scene& scene = app.scene();
@@ -310,9 +302,7 @@ int main() {
             std::cout << "  Use ImGui window to toggle visualizations" << std::endl;
         });
 
-        // ====================================================================
         // Update Loop
-        // ====================================================================
 
         app.onUpdate([&](Application& app, float deltaTime) {
             // Check if debug line system is available
@@ -359,9 +349,7 @@ int main() {
             }
         });
 
-        // ====================================================================
         // ImGui
-        // ====================================================================
 
         app.onImGui([&](Application& app) {
             ImGui::Begin("Debug Line Demo", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
@@ -422,9 +410,7 @@ int main() {
             ImGui::End();
         });
 
-        // ====================================================================
         // Run
-        // ====================================================================
 
         app.run();
 

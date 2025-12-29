@@ -622,7 +622,6 @@ int main() {
 
         std::cout << "[11/12] Initializing ImGui..." << std::endl;
 
-        // 12) ImGui initialization -------------------------------------------------
         ImGuiLayerCreateInfo imguiCI{};
         imguiCI.device = &device;
         imguiCI.window = window.glfwHandle();
@@ -636,7 +635,6 @@ int main() {
 
         std::cout << "[12/12] Starting main loop...\n" << std::endl;
 
-        // 13) Main loop ------------------------------------------------------------
         uint64_t frameNumber = 0;
         bool needDepthRecreate = false;
 

@@ -32,9 +32,7 @@ int main() {
         std::cout << "=== Holy Vulkan Engine - ECS Demo ===" << std::endl;
         std::cout << "Demonstrating new ECS architecture with intuitive API\n" << std::endl;
 
-        // ====================================================================
         // 1. Application Setup - Batteries-Included Approach
-        // ====================================================================
         std::cout << "[1/4] Creating application with default setup..." << std::endl;
 
         // Configure window
@@ -65,9 +63,7 @@ int main() {
         std::cout << "  ✓ Application created with auto-setup" << std::endl;
         std::cout << "  ✓ Default camera, lights, and systems registered" << std::endl;
 
-        // ====================================================================
         // 2. Spawn Entities - Simplified API
-        // ====================================================================
         std::cout << "\n[2/4] Spawning entities using helper API..." << std::endl;
 
         app.onInit([](Application& app) {
@@ -89,9 +85,7 @@ int main() {
                 std::cout << "  ✓ Central parent model loaded" << std::endl;
             }
 
-            // ====================================================================
             // 3. Hierarchy - Parent-Child Transforms
-            // ====================================================================
             std::cout << "\n[3/4] Creating hierarchy (parent-child transforms)..." << std::endl;
 
             // Create orbiting children around central entity
@@ -160,9 +154,7 @@ int main() {
             Input::setCursorMode(GLFW_CURSOR_DISABLED);
         });
 
-        // ====================================================================
         // 4. Update Loop - Demonstrate Hierarchy
-        // ====================================================================
         app.onUpdate([](Application& app, float deltaTime) {
             Scene& scene = app.scene();
 
